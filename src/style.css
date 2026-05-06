@@ -1,0 +1,196 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html, body {
+    background-color: #0A0A0A;
+    color: #F5F5F5;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Barlow Condensed', system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: 0.01em;
+  }
+
+  /* Inputs: prevent iOS zoom (>=16px) and consistent dark surface */
+  input, textarea, select {
+    font-size: 16px;
+    background-color: #1C1C1C;
+    color: #F5F5F5;
+    border: 1px solid rgba(255,255,255,0.06);
+    transition: border-color 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: #E85D04;
+    box-shadow: 0 0 0 2px rgba(232,93,4,0.4);
+    background-color: #1F1F1F;
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: #6B6B6B;
+  }
+
+  /* Hide spin buttons on number inputs */
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type=number] { -moz-appearance: textfield; }
+
+  ::selection {
+    background: rgba(232,93,4,0.45);
+    color: #fff;
+  }
+
+  /* Subtle scrollbar */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.08);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+}
+
+@layer components {
+  .pit-card {
+    @apply bg-pit-surface2 border border-pit-border rounded-2xl;
+  }
+
+  .pit-label {
+    @apply block text-xs uppercase tracking-wider text-pit-muted font-medium mb-2;
+    font-family: 'DM Sans', system-ui, sans-serif;
+  }
+
+  .pit-input {
+    @apply w-full px-4 py-3 rounded-xl text-pit-text;
+  }
+
+  .pit-input.invalid {
+    border-color: rgba(220,38,38,0.7);
+    box-shadow: 0 0 0 2px rgba(220,38,38,0.25);
+  }
+
+  .pit-btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-semibold text-white bg-pit-accent transition-all duration-200;
+    box-shadow: 0 8px 22px rgba(232,93,4,0.25);
+  }
+  .pit-btn-primary:hover {
+    background-color: #F48C06;
+    box-shadow: 0 10px 28px rgba(232,93,4,0.4);
+  }
+  .pit-btn-primary:active { transform: translateY(1px); }
+  .pit-btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .pit-btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-medium text-pit-text transition-all duration-200;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .pit-btn-ghost:hover {
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.16);
+  }
+
+  .pit-btn-danger {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-white transition-all duration-200;
+    background-color: #DC2626;
+  }
+  .pit-btn-danger:hover { background-color: #B91C1C; }
+
+  .pit-chip {
+    @apply inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium;
+    background: rgba(232,93,4,0.12);
+    color: #F48C06;
+    border: 1px solid rgba(232,93,4,0.2);
+  }
+
+  .pit-divider {
+    @apply h-px w-full;
+    background: rgba(255,255,255,0.06);
+  }
+
+  .pit-display {
+    font-family: 'Barlow Condensed', system-ui, sans-serif;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+  }
+
+  .pit-mono-num {
+    font-family: 'Barlow Condensed', system-ui, sans-serif;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Vue transitions for stepper */
+.slide-enter-active,
+.slide-leave-active {
+  transition: transform 320ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity 220ms ease;
+  position: absolute;
+  inset: 0;
+}
+.slide-enter-from { opacity: 0; transform: translateX(40px); }
+.slide-leave-to { opacity: 0; transform: translateX(-40px); }
+
+/* Item list transitions */
+.item-enter-active,
+.item-leave-active {
+  transition: all 280ms ease;
+}
+.item-enter-from {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+.item-leave-to {
+  opacity: 0;
+  transform: translateX(40px);
+}
+.item-move {
+  transition: transform 280ms ease;
+}
+
+/* Modal transitions */
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 200ms ease;
+}
+.modal-enter-active .modal-panel,
+.modal-leave-active .modal-panel {
+  transition: transform 240ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity 220ms ease;
+}
+.modal-enter-from,
+.modal-leave-to { opacity: 0; }
+.modal-enter-from .modal-panel { transform: translateY(20px) scale(0.98); opacity: 0; }
+.modal-leave-to .modal-panel { transform: translateY(20px) scale(0.98); opacity: 0; }
+
+/* Hover scale utility */
+.hover-lift { transition: transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease; }
+.hover-lift:hover { transform: scale(1.015); }
+
+/* Stepper container needs relative for absolute slide kids */
+.stepper-stage { position: relative; min-height: 360px; }
