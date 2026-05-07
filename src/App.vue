@@ -6,6 +6,7 @@ import ItemsTable from './components/ItemsTable.vue'
 import FinalStep from './components/FinalStep.vue'
 import HomeView from './components/HomeView.vue'
 import HistoryView from './components/HistoryView.vue'
+import ServicesView from './components/ServicesView.vue'
 import PasswordGate from './components/PasswordGate.vue'
 import { useQuote } from './composables/useQuote.js'
 import { useAuth } from './composables/useAuth.js'
@@ -18,8 +19,9 @@ const direction = ref('forward')
 const view = ref('home') // 'home' | 'stepper'
 const homeRef = ref(null)
 const showHistory = ref(false)
+const showServices = ref(false)
 const showPasswordGate = ref(false)
-const pendingAction = ref(null) // 'history' | 'home' | null
+const pendingAction = ref(null) // 'history' | 'home' | 'services' | null
 
 function showToast(message, type = 'info') {
   toast.value = { message, type }
@@ -64,6 +66,15 @@ function openHistory() {
   }
 }
 
+function openServices() {
+  if (auth.isAuthenticated.value) {
+    showServices.value = true
+  } else {
+    pendingAction.value = 'services'
+    showPasswordGate.value = true
+  }
+}
+
 function requestAuthForHome() {
   pendingAction.value = 'home'
   showPasswordGate.value = true
@@ -73,6 +84,8 @@ function onAuthSuccess() {
   showPasswordGate.value = false
   if (pendingAction.value === 'history') {
     showHistory.value = true
+  } else if (pendingAction.value === 'services') {
+    showServices.value = true
   } else if (pendingAction.value === 'home') {
     homeRef.value?.refresh?.()
   }
@@ -138,17 +151,34 @@ onMounted(() => {
           <div class="ml-auto flex items-center gap-1.5 md:gap-2">
             <!-- Cotizaciones -->
             <button
-              class="flex items-center gap-2 px-3 md:px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200"
+              class="flex items-center gap-2 px-2.5 md:px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200"
               :class="showHistory
                 ? 'bg-pit-accent/15 border border-pit-accent/30 text-pit-accentLight'
                 : 'text-pit-text hover:bg-white/5 border border-transparent'"
               @click="openHistory"
+              title="Cotizaciones"
             >
               <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 3h18v4H3zM3 11h18v10H3zM7 7v4M17 7v4" />
               </svg>
-              <span class="hidden sm:inline">Cotizaciones</span>
+              <span class="hidden md:inline">Cotizaciones</span>
               <span v-if="auth.isAuthenticated.value" class="w-1.5 h-1.5 rounded-full bg-emerald-400" title="Autenticado"></span>
+            </button>
+
+            <!-- Catálogo -->
+            <button
+              class="flex items-center gap-2 px-2.5 md:px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200"
+              :class="showServices
+                ? 'bg-pit-accent/15 border border-pit-accent/30 text-pit-accentLight'
+                : 'text-pit-text hover:bg-white/5 border border-transparent'"
+              @click="openServices"
+              title="Catálogo de servicios"
+            >
+              <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                <path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>
+              </svg>
+              <span class="hidden md:inline">Catálogo</span>
             </button>
 
             <!-- Crear -->
@@ -208,6 +238,13 @@ onMounted(() => {
       v-if="showHistory"
       @close="showHistory = false"
       @loaded="onLoadedFromHistory"
+      @toast="(m, t) => showToast(m, t)"
+    />
+
+    <!-- Services catalog -->
+    <ServicesView
+      v-if="showServices"
+      @close="showServices = false"
       @toast="(m, t) => showToast(m, t)"
     />
 

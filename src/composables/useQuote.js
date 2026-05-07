@@ -34,6 +34,15 @@ function capitalizeFirst(s) {
   return str.charAt(0).toUpperCase() + str.slice(1)
 }
 
+export function normalizePhoneCL(raw) {
+  if (!raw) return ''
+  const digits = String(raw).replace(/\D/g, '')
+  if (digits.length === 11 && digits.startsWith('56')) return digits
+  if (digits.length === 9 && digits.startsWith('9')) return '56' + digits
+  if (digits.length === 8) return '569' + digits
+  return digits
+}
+
 function todayISO() {
   const d = new Date()
   const y = d.getFullYear()
@@ -528,6 +537,67 @@ async function cloudSave() {
   }
 }
 
+// ---------- Services catalog ----------
+const servicesState = reactive({
+  list: [],
+  loading: false,
+  loaded: false
+})
+
+async function servicesList(force = false) {
+  if (servicesState.loaded && !force) return servicesState.list
+  servicesState.loading = true
+  try {
+    const res = await fetch('/api/services', { headers: authHeadersJson() })
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}))
+      throw new Error(j?.error || `HTTP ${res.status}`)
+    }
+    const data = await res.json()
+    servicesState.list = Array.isArray(data?.services) ? data.services : []
+    servicesState.loaded = true
+    return servicesState.list
+  } finally {
+    servicesState.loading = false
+  }
+}
+
+async function servicesUpsert(payload) {
+  const res = await fetch('/api/services', {
+    method: 'POST',
+    headers: authHeadersJson(),
+    body: JSON.stringify(payload)
+  })
+  if (!res.ok) {
+    const j = await res.json().catch(() => ({}))
+    throw new Error(j?.error || `HTTP ${res.status}`)
+  }
+  await servicesList(true)
+  return await res.json()
+}
+
+async function servicesDelete(id) {
+  const res = await fetch(`/api/services/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: authHeadersJson()
+  })
+  if (!res.ok) {
+    const j = await res.json().catch(() => ({}))
+    throw new Error(j?.error || `HTTP ${res.status}`)
+  }
+  servicesState.list = servicesState.list.filter(s => s.id !== id)
+}
+
+async function cloudLookupClient(patente) {
+  const url = `/api/clients?patente=${encodeURIComponent(patente)}`
+  const res = await fetch(url, { headers: authHeadersJson() })
+  if (!res.ok) {
+    const j = await res.json().catch(() => ({}))
+    throw new Error(j?.error || `HTTP ${res.status}`)
+  }
+  return await res.json()
+}
+
 async function cloudStats() {
   const res = await fetch('/api/stats', { headers: authHeadersJson() })
   if (!res.ok) {
@@ -629,6 +699,7 @@ export function useQuote() {
     tryRestore,
     formatCLP,
     titleCase,
+    normalizePhoneCL,
     formatFechaLarga,
     cloudState,
     cloudSave,
@@ -636,6 +707,11 @@ export function useQuote() {
     cloudGet,
     cloudDelete,
     cloudLoad,
-    cloudStats
+    cloudStats,
+    cloudLookupClient,
+    servicesState,
+    servicesList,
+    servicesUpsert,
+    servicesDelete
   }
 }

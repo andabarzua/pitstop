@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue'
-import { formatCLP } from '../composables/useQuote.js'
+import { formatCLP, useQuote } from '../composables/useQuote.js'
+import { useAuth } from '../composables/useAuth.js'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -8,11 +9,38 @@ const props = defineProps({
 })
 const emit = defineEmits(['close', 'save'])
 
+const q = useQuote()
+const auth = useAuth()
+
 const descripcion = ref('')
 const cantidad = ref(1)
 const precioUnitario = ref(0)
 const submitted = ref(false)
 const descRef = ref(null)
+
+const showCatalog = ref(false)
+const catalogQuery = ref('')
+
+const filteredCatalog = computed(() => {
+  const s = catalogQuery.value.trim().toLowerCase()
+  if (!s) return q.servicesState.list.slice(0, 50)
+  return q.servicesState.list
+    .filter(it => String(it.descripcion).toLowerCase().includes(s))
+    .slice(0, 50)
+})
+
+async function ensureCatalog() {
+  if (!auth.isAuthenticated.value) return
+  if (q.servicesState.loaded) return
+  try { await q.servicesList() } catch (e) {}
+}
+
+function pickFromCatalog(svc) {
+  descripcion.value = svc.descripcion
+  precioUnitario.value = svc.precio_unitario
+  showCatalog.value = false
+  catalogQuery.value = ''
+}
 
 const isEdit = computed(() => !!props.initial?.id)
 const total = computed(() => (Number(cantidad.value) || 0) * (Number(precioUnitario.value) || 0))
@@ -27,6 +55,8 @@ const isValid = computed(() => !errors.value.descripcion && !errors.value.cantid
 watch(() => props.open, async (val) => {
   if (val) {
     submitted.value = false
+    showCatalog.value = false
+    catalogQuery.value = ''
     if (props.initial) {
       descripcion.value = props.initial.descripcion || ''
       cantidad.value = props.initial.cantidad || 1
@@ -38,6 +68,7 @@ watch(() => props.open, async (val) => {
     }
     await nextTick()
     descRef.value?.focus()
+    ensureCatalog()
   }
 })
 
@@ -92,6 +123,44 @@ function onKeydown(e) {
         </div>
 
         <div class="space-y-4">
+          <!-- Catalog picker -->
+          <div v-if="auth.isAuthenticated.value && q.servicesState.list.length > 0">
+            <button
+              type="button"
+              class="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium border transition-all duration-200"
+              :class="showCatalog ? 'border-pit-accent bg-pit-accent/10 text-pit-accentLight' : 'border-pit-border text-pit-text hover:border-pit-borderHover hover:bg-white/5'"
+              @click="showCatalog = !showCatalog"
+            >
+              <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                <path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>
+              </svg>
+              Elegir del catálogo
+              <span class="ml-auto text-xs text-pit-muted">{{ q.servicesState.list.length }}</span>
+              <svg viewBox="0 0 24 24" class="w-4 h-4 transition-transform" :class="{ 'rotate-180': showCatalog }" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            <Transition name="modal">
+              <div v-if="showCatalog" class="mt-2 pit-card overflow-hidden">
+                <div class="px-3 py-2 border-b border-pit-border">
+                  <input v-model="catalogQuery" type="text" class="pit-input !py-2 text-sm" placeholder="Buscar..." />
+                </div>
+                <div class="max-h-56 overflow-y-auto">
+                  <ul v-if="filteredCatalog.length" class="divide-y divide-pit-border/50">
+                    <li v-for="svc in filteredCatalog" :key="svc.id">
+                      <button type="button" class="w-full text-left px-3 py-2.5 hover:bg-white/5 flex items-center gap-3" @click="pickFromCatalog(svc)">
+                        <span class="flex-1 min-w-0 truncate">{{ svc.descripcion }}</span>
+                        <span class="pit-mono-num text-pit-accentLight text-sm">{{ formatCLP(svc.precio_unitario) }}</span>
+                      </button>
+                    </li>
+                  </ul>
+                  <p v-else class="px-3 py-4 text-center text-xs text-pit-muted">Sin resultados</p>
+                </div>
+              </div>
+            </Transition>
+          </div>
+
           <div>
             <label class="pit-label">Descripción del Servicio <span class="text-pit-accent">*</span></label>
             <textarea
