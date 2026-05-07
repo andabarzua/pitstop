@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, watch, nextTick } from 'vue'
 import StepIndicator from './components/StepIndicator.vue'
 import ClientForm from './components/ClientForm.vue'
 import ItemsTable from './components/ItemsTable.vue'
@@ -46,6 +46,14 @@ function goToStep(n) {
 }
 
 const stepKey = computed(() => q.currentStep.value)
+
+function scrollToTop() {
+  nextTick(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })
+  })
+}
+
+watch([stepKey, view], () => scrollToTop())
 
 function openHistory() {
   if (auth.isAuthenticated.value) {

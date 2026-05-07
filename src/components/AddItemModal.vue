@@ -117,7 +117,7 @@ function onKeydown(e) {
               />
             </div>
             <div>
-              <label class="pit-label">Precio Unitario Neto (CLP)</label>
+              <label class="pit-label">Precio Unitario Neto</label>
               <input
                 v-model.number="precioUnitario"
                 type="number"
@@ -127,14 +127,13 @@ function onKeydown(e) {
                 :class="{ invalid: submitted && errors.precioUnitario }"
                 placeholder="0"
               />
-              <p class="text-[10px] text-pit-dim mt-1">Sin IVA. Se agrega 19% al total.</p>
             </div>
           </div>
 
           <!-- Live total -->
           <div class="rounded-xl p-4 flex items-center justify-between"
                style="background: linear-gradient(135deg, rgba(232,93,4,0.12), rgba(232,93,4,0.02)); border: 1px solid rgba(232,93,4,0.2);">
-            <span class="text-pit-muted text-xs uppercase tracking-widest">Subtotal línea (neto)</span>
+            <span class="text-pit-muted text-xs uppercase tracking-widest">Subtotal línea</span>
             <span class="pit-display text-2xl text-pit-accentLight">{{ formatCLP(total) }}</span>
           </div>
         </div>
