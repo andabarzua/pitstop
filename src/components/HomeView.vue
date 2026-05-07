@@ -156,7 +156,7 @@ defineExpose({ refresh: loadDashboard })
         </div>
       </div>
 
-      <!-- Promedio (spans 2 cols on mobile, 1 on desktop) -->
+      <!-- Total del mes (spans 2 cols on mobile, 1 on desktop) -->
       <div class="pit-card p-4 md:p-5 relative overflow-hidden col-span-2 sm:col-span-1"
            style="background: linear-gradient(135deg, rgba(232,93,4,0.10), rgba(20,20,20,1));">
         <div class="absolute -right-6 -top-6 w-24 h-24 rounded-full"
@@ -164,14 +164,14 @@ defineExpose({ refresh: loadDashboard })
         <div class="relative">
           <div class="flex items-center gap-2 mb-2">
             <svg viewBox="0 0 24 24" class="w-4 h-4 text-pit-accentLight" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+              <path d="M3 17l6-6 4 4 8-8M14 7h7v7" />
             </svg>
-            <p class="text-[10px] uppercase tracking-widest text-pit-muted font-medium">Promedio</p>
+            <p class="text-[10px] uppercase tracking-widest text-pit-muted font-medium">Total del mes</p>
           </div>
           <p class="pit-display text-3xl md:text-4xl text-pit-accentLight leading-none break-words">
-            {{ auth.isAuthenticated.value && stats.all > 0 ? q.formatCLP(stats.avgTotal) : '—' }}
+            {{ auth.isAuthenticated.value ? q.formatCLP(stats.monthTotal) : '—' }}
           </p>
-          <p class="text-xs text-pit-muted mt-2">por cotización</p>
+          <p class="text-xs text-pit-muted mt-2">cotizaciones del mes (con IVA)</p>
         </div>
       </div>
 
