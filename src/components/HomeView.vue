@@ -62,6 +62,18 @@ function fmtDate(v) {
   }
 }
 
+function fmtCreated(v) {
+  if (!v) return ''
+  try {
+    const d = new Date(v)
+    const date = d.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: '2-digit' })
+    const time = d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: false })
+    return `${date} · ${time}`
+  } catch (e) {
+    return ''
+  }
+}
+
 onMounted(loadDashboard)
 defineExpose({ refresh: loadDashboard })
 </script>
@@ -228,11 +240,17 @@ defineExpose({ refresh: loadDashboard })
             <div class="flex-1 min-w-0">
               <div class="flex flex-wrap items-baseline gap-2">
                 <span class="pit-display text-pit-accent">{{ item.id }}</span>
-                <span class="text-xs text-pit-muted">{{ fmtDate(item.fecha) }}</span>
               </div>
               <p class="text-sm mt-1 truncate">
                 <span class="font-medium">{{ (item.cliente_nombre || '') + ' ' + (item.cliente_apellido || '') }}</span>
                 <span v-if="item.patente" class="text-pit-muted ml-2 pit-display tracking-widest text-xs">{{ item.patente }}</span>
+              </p>
+              <p class="text-[11px] text-pit-muted mt-1 flex items-center gap-1">
+                <svg viewBox="0 0 24 24" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 7v5l3 2" />
+                </svg>
+                Creada {{ fmtCreated(item.created_at) }}
               </p>
             </div>
             <div class="text-right">
