@@ -132,7 +132,6 @@ onMounted(() => {
               <h1 class="pit-display text-xl md:text-2xl leading-none">
                 Pit<span class="text-pit-accent">Stop</span>
               </h1>
-              <p class="text-[10px] text-pit-muted tracking-wide hidden md:block">Cotizaciones Profesionales</p>
             </div>
           </button>
 
