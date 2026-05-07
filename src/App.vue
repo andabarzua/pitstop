@@ -4,12 +4,19 @@ import StepIndicator from './components/StepIndicator.vue'
 import ClientForm from './components/ClientForm.vue'
 import ItemsTable from './components/ItemsTable.vue'
 import FinalStep from './components/FinalStep.vue'
+import HistoryView from './components/HistoryView.vue'
+import PasswordGate from './components/PasswordGate.vue'
 import { useQuote } from './composables/useQuote.js'
+import { useAuth } from './composables/useAuth.js'
 
 const q = useQuote()
+const auth = useAuth()
 const fileInput = ref(null)
 const toast = ref(null)
 const direction = ref('forward')
+const showHistory = ref(false)
+const showPasswordGate = ref(false)
+const pendingAction = ref(null) // 'history' | null
 
 function showToast(message, type = 'info') {
   toast.value = { message, type }
@@ -58,6 +65,28 @@ function goToStep(n) {
 
 const stepKey = computed(() => q.currentStep.value)
 
+function openHistory() {
+  if (auth.isAuthenticated.value) {
+    showHistory.value = true
+  } else {
+    pendingAction.value = 'history'
+    showPasswordGate.value = true
+  }
+}
+
+function onAuthSuccess() {
+  showPasswordGate.value = false
+  if (pendingAction.value === 'history') {
+    showHistory.value = true
+  }
+  pendingAction.value = null
+}
+
+function onLoadedFromHistory() {
+  showHistory.value = false
+  showToast('Cotización cargada del historial', 'success')
+}
+
 onMounted(() => {
   q.tryLoadFromHash()
 })
@@ -94,6 +123,13 @@ onMounted(() => {
         </div>
 
         <div class="ml-auto flex items-center gap-2">
+          <button class="pit-btn-ghost !px-3 !py-2 text-sm" @click="openHistory" title="Historial cloud">
+            <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 3h18v4H3zM3 11h18v10H3zM7 7v4M17 7v4" />
+            </svg>
+            <span class="hidden sm:inline">Historial</span>
+            <span v-if="auth.isAuthenticated.value" class="w-1.5 h-1.5 rounded-full bg-emerald-400 ml-0.5" title="Autenticado"></span>
+          </button>
           <button class="pit-btn-ghost !px-3 !py-2 text-sm" @click="pickFile" title="Cargar cotización existente (.json)">
             <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
@@ -126,6 +162,21 @@ onMounted(() => {
         </Transition>
       </div>
     </main>
+
+    <!-- Password gate -->
+    <PasswordGate
+      :open="showPasswordGate"
+      @close="showPasswordGate = false; pendingAction = null"
+      @success="onAuthSuccess"
+    />
+
+    <!-- History -->
+    <HistoryView
+      v-if="showHistory"
+      @close="showHistory = false"
+      @loaded="onLoadedFromHistory"
+      @toast="(m, t) => showToast(m, t)"
+    />
 
     <!-- Toast -->
     <Transition name="modal">

@@ -1,10 +1,15 @@
 <script setup>
 import { ref, computed, onBeforeUnmount } from 'vue'
 import { useQuote } from '../composables/useQuote.js'
+import { useAuth } from '../composables/useAuth.js'
 import PdfViewer from './PdfViewer.vue'
+import PasswordGate from './PasswordGate.vue'
 
 const emit = defineEmits(['back', 'reset', 'toast'])
 const q = useQuote()
+const auth = useAuth()
+const showGate = ref(false)
+const savedToCloud = ref(false)
 
 const previewUrl = ref('')
 const showPreview = ref(false)
@@ -76,6 +81,36 @@ async function onShare() {
       notify('No se pudo compartir', 'error')
     }
   }
+}
+
+async function doCloudSave() {
+  try {
+    await q.cloudSave()
+    savedToCloud.value = true
+    notify('Guardada en historial cloud', 'success')
+    setTimeout(() => { savedToCloud.value = false }, 2500)
+  } catch (e) {
+    if (String(e.message).toLowerCase().includes('password')) {
+      auth.logout()
+      showGate.value = true
+    } else {
+      notify(e.message || 'No se pudo guardar', 'error')
+    }
+  }
+}
+
+function onCloudSave() {
+  if (q.itemCount.value === 0) return
+  if (!auth.isAuthenticated.value) {
+    showGate.value = true
+    return
+  }
+  doCloudSave()
+}
+
+function onGateSuccess() {
+  showGate.value = false
+  doCloudSave()
 }
 
 function onSaveJson() {
@@ -188,8 +223,42 @@ onBeforeUnmount(() => {
       </button>
     </div>
 
-    <!-- Save as editable JSON -->
+    <!-- Cloud save -->
     <div class="mt-4">
+      <button
+        class="w-full py-4 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 border"
+        :class="savedToCloud
+          ? 'bg-emerald-600/20 border-emerald-500/40 text-emerald-200'
+          : 'bg-pit-surface2 border-pit-border text-pit-text hover:border-pit-accent/60 hover:bg-pit-accent/10'"
+        @click="onCloudSave"
+        :disabled="q.itemCount.value === 0 || q.cloudState.saving"
+      >
+        <span v-if="q.cloudState.saving" class="flex items-center gap-2">
+          <svg viewBox="0 0 24 24" class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 1 1-6.2-8.5" />
+          </svg>
+          Guardando…
+        </span>
+        <span v-else-if="savedToCloud" class="flex items-center gap-2">
+          <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          Guardada en historial
+        </span>
+        <span v-else class="flex items-center gap-2">
+          <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <path d="M12 3v12" />
+            <path d="M21 9c-1-3-4-5-9-5s-8 2-9 5" />
+          </svg>
+          Guardar en historial cloud
+        </span>
+      </button>
+    </div>
+
+    <!-- Save as editable JSON -->
+    <div class="mt-2">
       <button class="pit-btn-ghost w-full py-3" @click="onSaveJson" :disabled="q.itemCount.value === 0">
         <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
@@ -199,6 +268,14 @@ onBeforeUnmount(() => {
         Guardar como archivo editable (.json)
       </button>
     </div>
+
+    <PasswordGate
+      :open="showGate"
+      title="Guardar en historial"
+      message="Ingresa la password para guardar esta cotización en el cloud."
+      @close="showGate = false"
+      @success="onGateSuccess"
+    />
 
     <!-- Preview area -->
     <Transition name="modal">

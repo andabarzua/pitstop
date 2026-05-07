@@ -1,6 +1,7 @@
 import { reactive, computed, ref } from 'vue'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { useAuth } from './useAuth.js'
 
 const STORAGE_KEY = 'pitstop:lastQuote'
 
@@ -365,6 +366,97 @@ function buildShareUrl() {
   return url.toString()
 }
 
+// ---------- Cloud (Vercel + Neon) ----------
+const cloudState = reactive({
+  saving: false,
+  loadingList: false,
+  list: [],
+  lastError: ''
+})
+
+function authHeadersJson() {
+  const { authHeaders } = useAuth()
+  return { 'Content-Type': 'application/json', ...authHeaders() }
+}
+
+async function cloudSave() {
+  const { isAuthenticated } = useAuth()
+  if (!isAuthenticated.value) {
+    cloudState.lastError = 'Necesitas ingresar la password primero.'
+    throw new Error(cloudState.lastError)
+  }
+  cloudState.saving = true
+  cloudState.lastError = ''
+  try {
+    const payload = exportToJson()
+    const res = await fetch('/api/quotes', {
+      method: 'POST',
+      headers: authHeadersJson(),
+      body: JSON.stringify(payload)
+    })
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}))
+      throw new Error(j?.error || `HTTP ${res.status}`)
+    }
+    return await res.json()
+  } catch (e) {
+    cloudState.lastError = e.message || 'Error al guardar en cloud'
+    throw e
+  } finally {
+    cloudState.saving = false
+  }
+}
+
+async function cloudList() {
+  cloudState.loadingList = true
+  cloudState.lastError = ''
+  try {
+    const res = await fetch('/api/quotes', { headers: authHeadersJson() })
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}))
+      throw new Error(j?.error || `HTTP ${res.status}`)
+    }
+    const data = await res.json()
+    cloudState.list = Array.isArray(data?.quotes) ? data.quotes : []
+    return cloudState.list
+  } catch (e) {
+    cloudState.lastError = e.message || 'Error al listar'
+    throw e
+  } finally {
+    cloudState.loadingList = false
+  }
+}
+
+async function cloudGet(id) {
+  const res = await fetch(`/api/quotes/${encodeURIComponent(id)}`, {
+    headers: authHeadersJson()
+  })
+  if (!res.ok) {
+    const j = await res.json().catch(() => ({}))
+    throw new Error(j?.error || `HTTP ${res.status}`)
+  }
+  return await res.json()
+}
+
+async function cloudDelete(id) {
+  const res = await fetch(`/api/quotes/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: authHeadersJson()
+  })
+  if (!res.ok) {
+    const j = await res.json().catch(() => ({}))
+    throw new Error(j?.error || `HTTP ${res.status}`)
+  }
+  cloudState.list = cloudState.list.filter(q => q.id !== id)
+  return await res.json()
+}
+
+async function cloudLoad(id) {
+  const data = await cloudGet(id)
+  loadFromJson(data)
+  return data
+}
+
 function tryLoadFromHash() {
   try {
     const hash = window.location.hash || ''
@@ -404,6 +496,12 @@ export function useQuote() {
     tryLoadFromHash,
     tryRestore,
     formatCLP,
-    formatFechaLarga
+    formatFechaLarga,
+    cloudState,
+    cloudSave,
+    cloudList,
+    cloudGet,
+    cloudDelete,
+    cloudLoad
   }
 }
