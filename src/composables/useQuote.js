@@ -401,21 +401,19 @@ function buildPdf() {
   py = sectionHeader(doc, 'Detalles de pago', margin, py, innerWidth)
 
   doc.setFillColor(252, 252, 252)
-  doc.rect(margin, py, innerWidth, 70, 'F')
+  doc.rect(margin, py, innerWidth, 52, 'F')
 
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(10)
   doc.setTextColor(120, 120, 120)
   doc.text('Forma de pago:', margin + 12, py + 18)
   doc.text('Validez:', margin + 12, py + 36)
-  doc.text('Información adicional:', margin + 12, py + 54)
 
   doc.setTextColor(40, 40, 40)
   doc.text('Transferencia bancaria.', margin + 130, py + 18)
   doc.text('15 días corridos desde la fecha de emisión.', margin + 130, py + 36)
-  doc.text('Los precios incluyen el IVA correspondiente.', margin + 130, py + 54)
 
-  py += 70
+  py += 52
 
   // ---------- Section: CONTACTO ----------
   py += 16
