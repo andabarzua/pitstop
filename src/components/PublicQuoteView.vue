@@ -232,6 +232,17 @@ onMounted(loadQuote)
           </div>
         </section>
 
+        <!-- Observaciones -->
+        <section v-if="data.observaciones && data.observaciones.trim()" class="pit-card overflow-hidden">
+          <div class="px-4 md:px-5 py-2.5 text-white text-xs font-bold uppercase tracking-widest"
+               style="background: linear-gradient(135deg, #E85D04, #B14302);">
+            Observaciones del vehículo
+          </div>
+          <div class="p-4 md:p-5 text-sm whitespace-pre-wrap break-words">
+            {{ data.observaciones }}
+          </div>
+        </section>
+
         <!-- Detalles de pago -->
         <section class="pit-card overflow-hidden">
           <div class="px-4 md:px-5 py-2.5 text-white text-xs font-bold uppercase tracking-widest"

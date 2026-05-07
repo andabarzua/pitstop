@@ -83,7 +83,8 @@ function emptyQuote() {
     id: generateQuoteId(),
     fecha: todayISO(),
     cliente: emptyClient(),
-    items: []
+    items: [],
+    observaciones: ''
   }
 }
 
@@ -149,6 +150,7 @@ function exportToJson() {
     id: state.quote.id,
     fecha: state.quote.fecha,
     cliente: { ...state.quote.cliente },
+    observaciones: state.quote.observaciones || '',
     items: state.quote.items.map(it => ({
       id: it.id,
       descripcion: it.descripcion,
@@ -176,6 +178,7 @@ function loadFromJson(data) {
   state.quote.id = data.id || generateQuoteId()
   state.quote.fecha = data.fecha || todayISO()
   state.quote.cliente = { ...emptyClient(), ...data.cliente }
+  state.quote.observaciones = typeof data.observaciones === 'string' ? data.observaciones : ''
   state.quote.items = data.items.map(it => {
     const cantidad = Math.max(1, Math.floor(Number(it.cantidad) || 1))
     const precioUnitario = Math.max(0, Math.round(Number(it.precioUnitario) || 0))
@@ -423,6 +426,34 @@ function buildPdf() {
   doc.text('15 días corridos desde la fecha de emisión.', margin + 130, py + 36)
 
   py += 52
+
+  // ---------- Section: OBSERVACIONES (si existen) ----------
+  const obs = (state.quote.observaciones || '').trim()
+  if (obs) {
+    py += 16
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(10)
+    const obsLines = doc.splitTextToSize(obs, innerWidth - 24)
+    const obsLineH = 14
+    const obsBlockH = Math.max(obsLines.length * obsLineH + 20, 40)
+
+    if (py + 22 + obsBlockH > pageHeight - 80) {
+      doc.addPage()
+      py = margin
+    }
+    py = sectionHeader(doc, 'Observaciones del vehículo', margin, py, innerWidth)
+
+    doc.setFillColor(252, 252, 252)
+    doc.rect(margin, py, innerWidth, obsBlockH, 'F')
+
+    doc.setTextColor(40, 40, 40)
+    let oy = py + 16
+    for (const line of obsLines) {
+      doc.text(line, margin + 12, oy)
+      oy += obsLineH
+    }
+    py += obsBlockH
+  }
 
   // ---------- Section: CONTACTO ----------
   py += 16

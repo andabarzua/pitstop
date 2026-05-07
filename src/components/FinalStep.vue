@@ -63,6 +63,15 @@ function onGateClose() {
   }
 }
 
+let lastSavedObs = ''
+function onObservacionesBlur() {
+  const cur = (q.quote.observaciones || '').trim()
+  if (cur === lastSavedObs) return
+  lastSavedObs = cur
+  if (q.itemCount.value === 0) return
+  autoSave()
+}
+
 function onDownload() {
   try {
     q.downloadPdf()
@@ -149,6 +158,7 @@ async function onShare() {
 }
 
 onMounted(() => {
+  lastSavedObs = (q.quote.observaciones || '').trim()
   autoSave()
 })
 
@@ -267,6 +277,24 @@ onBeforeUnmount(() => {
           <p class="font-medium pit-display tracking-widest text-lg">{{ (q.quote.cliente.patente || '—').toUpperCase() }}</p>
           <p class="text-pit-muted">{{ vehicleStr }}</p>
         </div>
+      </div>
+
+      <div class="pit-divider my-5"></div>
+
+      <div>
+        <label class="text-[11px] uppercase tracking-widest text-pit-muted mb-1 block">
+          Observaciones del vehículo
+        </label>
+        <textarea
+          v-model="q.quote.observaciones"
+          @blur="onObservacionesBlur"
+          rows="3"
+          placeholder="Notas, hallazgos, recomendaciones u observaciones del vehículo (opcional)…"
+          class="w-full bg-transparent border border-pit-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-pit-accent transition-colors resize-y placeholder:text-pit-dim"
+        ></textarea>
+        <p class="text-[10px] text-pit-muted mt-1">
+          Aparecerá en el PDF y en la cotización online del cliente.
+        </p>
       </div>
     </div>
 
