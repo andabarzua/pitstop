@@ -1,17 +1,21 @@
 import { getSql, ensureSchema } from '../_lib/db.js'
 import { checkPassword, setCors } from '../_lib/auth.js'
 
+const IVA_RATE = 0.19
+
 function summarize(data) {
   const items = Array.isArray(data?.items) ? data.items : []
-  const total = items.reduce(
+  const subtotal = items.reduce(
     (s, it) => s + (Number(it.cantidad) || 0) * (Number(it.precioUnitario) || 0),
     0
   )
+  const iva = Math.round(subtotal * IVA_RATE)
+  const total = subtotal + iva
   return {
     cliente_nombre: data?.cliente?.nombre || null,
     cliente_apellido: data?.cliente?.apellido || null,
     patente: (data?.cliente?.patente || '').toUpperCase() || null,
-    total: Math.round(total),
+    total: total,
     item_count: items.length,
     fecha: data?.fecha || new Date().toISOString().slice(0, 10)
   }

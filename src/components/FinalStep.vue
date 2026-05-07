@@ -176,9 +176,23 @@ onBeforeUnmount(() => {
           <p class="text-pit-muted text-xs mt-1">{{ q.formatFechaLarga(q.quote.fecha) }}</p>
         </div>
         <div class="text-right">
-          <p class="text-[11px] uppercase tracking-widest text-pit-muted">Total</p>
+          <p class="text-[11px] uppercase tracking-widest text-pit-muted">Total c/IVA</p>
           <p class="pit-display text-3xl md:text-4xl text-pit-accentLight">{{ q.formatCLP(q.total.value) }}</p>
           <p class="text-pit-muted text-xs mt-1">{{ q.itemCount.value }} {{ q.itemCount.value === 1 ? 'item' : 'items' }}</p>
+        </div>
+      </div>
+
+      <div class="pit-divider my-5"></div>
+
+      <!-- Totals breakdown -->
+      <div class="flex flex-wrap items-baseline gap-x-6 gap-y-1 text-sm">
+        <div>
+          <span class="text-[11px] uppercase tracking-widest text-pit-muted mr-2">Subtotal</span>
+          <span class="pit-mono-num">{{ q.formatCLP(q.subtotal.value) }}</span>
+        </div>
+        <div>
+          <span class="text-[11px] uppercase tracking-widest text-pit-muted mr-2">IVA 19%</span>
+          <span class="pit-mono-num">{{ q.formatCLP(q.iva.value) }}</span>
         </div>
       </div>
 

@@ -41,7 +41,7 @@ const hasItems = computed(() => q.itemCount.value > 0)
         <h2 class="pit-display text-3xl md:text-4xl leading-none">Items de Cotización</h2>
         <p class="text-pit-muted text-sm mt-1">
           <span class="pit-chip">{{ q.itemCount.value }} {{ q.itemCount.value === 1 ? 'item' : 'items' }}</span>
-          <span class="ml-2">Total:
+          <span class="ml-2">Total c/IVA:
             <span class="pit-display text-pit-accentLight text-lg align-middle">{{ q.formatCLP(q.total.value) }}</span>
           </span>
         </p>
@@ -123,11 +123,22 @@ const hasItems = computed(() => q.itemCount.value > 0)
         </div>
       </TransitionGroup>
 
-      <!-- Total bar -->
-      <div class="rounded-xl px-4 py-4 flex items-center justify-between"
-           style="background: linear-gradient(135deg, #B14302, #E85D04);">
-        <span class="text-sm font-semibold tracking-wider uppercase">Total</span>
-        <span class="pit-display text-2xl">{{ q.formatCLP(q.total.value) }}</span>
+      <!-- Totals breakdown (mobile) -->
+      <div class="pit-card p-4 space-y-2">
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-pit-muted">Subtotal (neto)</span>
+          <span class="pit-mono-num">{{ q.formatCLP(q.subtotal.value) }}</span>
+        </div>
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-pit-muted">IVA 19%</span>
+          <span class="pit-mono-num">{{ q.formatCLP(q.iva.value) }}</span>
+        </div>
+        <div class="pit-divider"></div>
+        <div class="rounded-lg px-3 py-3 flex items-center justify-between"
+             style="background: linear-gradient(135deg, #B14302, #E85D04);">
+          <span class="text-sm font-semibold tracking-wider uppercase">Total</span>
+          <span class="pit-display text-2xl">{{ q.formatCLP(q.total.value) }}</span>
+        </div>
       </div>
     </div>
 
@@ -188,6 +199,16 @@ const hasItems = computed(() => q.itemCount.value > 0)
             </tr>
           </TransitionGroup>
           <tfoot>
+            <tr class="border-t border-pit-border">
+              <td colspan="4" class="px-4 py-2.5 text-right text-sm text-pit-muted">Subtotal (neto)</td>
+              <td class="px-4 py-2.5 text-right pit-mono-num text-pit-text">{{ q.formatCLP(q.subtotal.value) }}</td>
+              <td></td>
+            </tr>
+            <tr>
+              <td colspan="4" class="px-4 py-2.5 text-right text-sm text-pit-muted">IVA 19%</td>
+              <td class="px-4 py-2.5 text-right pit-mono-num text-pit-text">{{ q.formatCLP(q.iva.value) }}</td>
+              <td></td>
+            </tr>
             <tr style="background: linear-gradient(135deg, #B14302, #E85D04);">
               <td colspan="4" class="px-4 py-4 text-right text-sm font-bold uppercase tracking-widest text-white">Total</td>
               <td class="px-4 py-4 text-right pit-display text-xl text-white">{{ q.formatCLP(q.total.value) }}</td>

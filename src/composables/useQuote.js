@@ -4,6 +4,7 @@ import autoTable from 'jspdf-autotable'
 import { useAuth } from './useAuth.js'
 
 const STORAGE_KEY = 'pitstop:lastQuote'
+const IVA_RATE = 0.19
 
 const formatter = new Intl.NumberFormat('es-CL', {
   style: 'currency',
@@ -68,7 +69,8 @@ const state = reactive({
 const subtotal = computed(() =>
   state.quote.items.reduce((sum, it) => sum + (Number(it.cantidad) || 0) * (Number(it.precioUnitario) || 0), 0)
 )
-const total = computed(() => subtotal.value)
+const iva = computed(() => Math.round(subtotal.value * IVA_RATE))
+const total = computed(() => subtotal.value + iva.value)
 const itemCount = computed(() => state.quote.items.length)
 
 function addItem(item) {
@@ -130,6 +132,8 @@ function exportToJson() {
     })),
     totales: {
       subtotal: subtotal.value,
+      iva: iva.value,
+      iva_rate: IVA_RATE,
       total: total.value
     }
   }
@@ -314,10 +318,20 @@ function buildPdf() {
       3: { cellWidth: 90, halign: 'right' },
       4: { cellWidth: 90, halign: 'right', fontStyle: 'bold' }
     },
-    foot: [[
-      { content: 'TOTAL', colSpan: 4, styles: { halign: 'right', fillColor: [28, 28, 28], textColor: [255, 255, 255], fontStyle: 'bold' } },
-      { content: formatCLP(total.value), styles: { halign: 'right', fillColor: [28, 28, 28], textColor: [255, 255, 255], fontStyle: 'bold' } }
-    ]]
+    foot: [
+      [
+        { content: 'Subtotal (neto)', colSpan: 4, styles: { halign: 'right', fillColor: [249, 249, 249], textColor: [60, 60, 60], fontStyle: 'normal' } },
+        { content: formatCLP(subtotal.value), styles: { halign: 'right', fillColor: [249, 249, 249], textColor: [60, 60, 60], fontStyle: 'bold' } }
+      ],
+      [
+        { content: 'IVA 19%', colSpan: 4, styles: { halign: 'right', fillColor: [249, 249, 249], textColor: [60, 60, 60], fontStyle: 'normal' } },
+        { content: formatCLP(iva.value), styles: { halign: 'right', fillColor: [249, 249, 249], textColor: [60, 60, 60], fontStyle: 'bold' } }
+      ],
+      [
+        { content: 'TOTAL', colSpan: 4, styles: { halign: 'right', fillColor: [28, 28, 28], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 11 } },
+        { content: formatCLP(total.value), styles: { halign: 'right', fillColor: [28, 28, 28], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 11 } }
+      ]
+    ]
   })
 
   // ---------- Footer on every page ----------
@@ -479,7 +493,9 @@ export function useQuote() {
     currentStep: computed(() => state.currentStep),
     setStep,
     subtotal,
+    iva,
     total,
+    ivaRate: IVA_RATE,
     itemCount,
     addItem,
     updateItem,
