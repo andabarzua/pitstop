@@ -1,30 +1,73 @@
 import { ref, computed } from 'vue'
 
-const STORAGE_KEY = 'pitstop:authPassword'
+const TOKEN_KEY = 'pitstop:authToken'
+const PASSWORD_KEY_OLD = 'pitstop:authPassword' // legacy
 
-const password = ref('')
+const token = ref('')
 const verifying = ref(false)
 const lastError = ref('')
 
-try {
-  const saved = localStorage.getItem(STORAGE_KEY)
-  if (saved) password.value = saved
-} catch (e) { /* no-op */ }
+function safeGet(k) {
+  try { return localStorage.getItem(k) } catch (e) { return null }
+}
+function safeSet(k, v) {
+  try { localStorage.setItem(k, v) } catch (e) {}
+}
+function safeDel(k) {
+  try { localStorage.removeItem(k) } catch (e) {}
+}
 
-const isAuthenticated = computed(() => !!password.value)
+// Cargar token guardado
+const saved = safeGet(TOKEN_KEY)
+if (saved) token.value = saved
 
-async function verify(pw) {
+const isAuthenticated = computed(() => !!token.value)
+
+// Migración silenciosa: si hay password vieja pero no token, intentar upgrade
+async function migrateIfNeeded() {
+  if (token.value) return
+  const oldPwd = safeGet(PASSWORD_KEY_OLD)
+  if (!oldPwd) return
+  try {
+    const res = await fetch('/api/auth-check', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-app-password': oldPwd }
+    })
+    if (res.ok) {
+      const data = await res.json()
+      if (data?.token) {
+        token.value = data.token
+        safeSet(TOKEN_KEY, data.token)
+        safeDel(PASSWORD_KEY_OLD)
+      }
+    } else {
+      // password ya no es válida → limpiar
+      safeDel(PASSWORD_KEY_OLD)
+    }
+  } catch (e) {
+    /* offline: dejar la password antigua, fallback en backend la acepta */
+  }
+}
+migrateIfNeeded()
+
+async function verify(password) {
   verifying.value = true
   lastError.value = ''
   try {
     const res = await fetch('/api/auth-check', {
-      method: 'GET',
-      headers: { 'x-app-password': pw }
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-app-password': password }
     })
     if (res.ok) {
-      password.value = pw
-      try { localStorage.setItem(STORAGE_KEY, pw) } catch (e) {}
-      return true
+      const data = await res.json()
+      if (data?.token) {
+        token.value = data.token
+        safeSet(TOKEN_KEY, data.token)
+        safeDel(PASSWORD_KEY_OLD)
+        return true
+      }
+      lastError.value = 'Respuesta inválida del servidor'
+      return false
     }
     let msg = 'Password incorrecta'
     try {
@@ -42,22 +85,40 @@ async function verify(pw) {
 }
 
 function logout() {
-  password.value = ''
-  try { localStorage.removeItem(STORAGE_KEY) } catch (e) {}
+  token.value = ''
+  safeDel(TOKEN_KEY)
+  safeDel(PASSWORD_KEY_OLD)
 }
 
 function authHeaders() {
-  return password.value ? { 'x-app-password': password.value } : {}
+  return token.value ? { 'x-auth-token': token.value } : {}
+}
+
+// Verifica el token guardado en background; si está expirado/inválido, hace logout
+async function refreshIfStale() {
+  if (!token.value) return
+  try {
+    const res = await fetch('/api/auth-check', {
+      method: 'GET',
+      headers: { 'x-auth-token': token.value }
+    })
+    if (res.status === 401) {
+      logout()
+    }
+  } catch (e) {
+    /* offline: ignorar */
+  }
 }
 
 export function useAuth() {
   return {
-    password,
+    token,
     isAuthenticated,
     verifying,
     lastError,
     verify,
     logout,
-    authHeaders
+    authHeaders,
+    refreshIfStale
   }
 }
