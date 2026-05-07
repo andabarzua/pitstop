@@ -171,7 +171,7 @@ defineExpose({ refresh: loadDashboard })
           <p class="pit-display text-3xl md:text-4xl text-pit-accentLight leading-none break-words">
             {{ auth.isAuthenticated.value ? q.formatCLP(stats.monthTotal) : '—' }}
           </p>
-          <p class="text-xs text-pit-muted mt-2">cotizaciones del mes (con IVA)</p>
+          <p class="text-xs text-pit-muted mt-2">cotizaciones del mes</p>
         </div>
       </div>
 
