@@ -421,6 +421,15 @@ async function cloudSave() {
   }
 }
 
+async function cloudStats() {
+  const res = await fetch('/api/stats', { headers: authHeadersJson() })
+  if (!res.ok) {
+    const j = await res.json().catch(() => ({}))
+    throw new Error(j?.error || `HTTP ${res.status}`)
+  }
+  return await res.json()
+}
+
 async function cloudList() {
   cloudState.loadingList = true
   cloudState.lastError = ''
@@ -518,6 +527,7 @@ export function useQuote() {
     cloudList,
     cloudGet,
     cloudDelete,
-    cloudLoad
+    cloudLoad,
+    cloudStats
   }
 }
