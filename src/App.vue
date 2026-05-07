@@ -12,7 +12,6 @@ import { useAuth } from './composables/useAuth.js'
 
 const q = useQuote()
 const auth = useAuth()
-const fileInput = ref(null)
 const toast = ref(null)
 const direction = ref('forward')
 
@@ -27,34 +26,6 @@ function showToast(message, type = 'info') {
   setTimeout(() => { toast.value = null }, 3200)
 }
 
-function pickFile() {
-  fileInput.value?.click()
-}
-
-function onFileSelected(e) {
-  const file = e.target.files?.[0]
-  if (!file) return
-  if (!/\.json$/i.test(file.name)) {
-    showToast('Selecciona un archivo .json válido', 'error')
-    e.target.value = ''
-    return
-  }
-  const reader = new FileReader()
-  reader.onload = () => {
-    try {
-      const data = JSON.parse(String(reader.result))
-      q.loadFromJson(data)
-      view.value = 'stepper'
-      showToast('Cotización cargada correctamente', 'success')
-    } catch (err) {
-      showToast(err.message || 'Error al leer el archivo', 'error')
-    }
-  }
-  reader.onerror = () => showToast('No se pudo leer el archivo', 'error')
-  reader.readAsText(file)
-  e.target.value = ''
-}
-
 function startNewQuote() {
   if (q.itemCount.value > 0 || q.quote.cliente.nombre || q.quote.cliente.apellido || q.quote.cliente.patente) {
     if (!confirm('¿Iniciar una nueva cotización? Los datos actuales se perderán.')) return
@@ -66,7 +37,6 @@ function startNewQuote() {
 
 function goHome() {
   view.value = 'home'
-  // Refresh stats if home is already authenticated
   setTimeout(() => homeRef.value?.refresh?.(), 50)
 }
 
@@ -138,64 +108,66 @@ onMounted(() => {
            style="background: radial-gradient(closest-side, rgba(244,140,6,0.10), transparent 70%);"></div>
     </div>
 
-    <!-- Header -->
-    <header class="sticky top-0 z-30 backdrop-blur-md bg-pit-bg/70 border-b border-pit-border">
-      <div class="max-w-5xl mx-auto px-4 md:px-6 py-3 flex items-center gap-3">
-        <!-- Logo (clickable, goes home) -->
-        <button class="flex items-center gap-3 min-w-0 group" @click="goHome" :title="view === 'home' ? '' : 'Ir al inicio'">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
-               style="background: linear-gradient(135deg, #E85D04, #B14302); box-shadow: 0 6px 18px rgba(232,93,4,0.35);">
-            <svg viewBox="0 0 24 24" class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-            </svg>
-          </div>
-          <div class="min-w-0 text-left">
-            <h1 class="pit-display text-2xl md:text-3xl leading-none">
-              Pit<span class="text-pit-accent">Stop</span>
-            </h1>
-            <p class="text-[11px] md:text-xs text-pit-muted tracking-wide">Cotizaciones Profesionales</p>
-          </div>
-        </button>
+    <!-- Floating Navbar -->
+    <header class="sticky top-0 z-30 pt-3 md:pt-5 px-3 md:px-6">
+      <div class="max-w-4xl mx-auto rounded-2xl border border-pit-border bg-pit-surface/85 backdrop-blur-xl shadow-soft">
+        <div class="flex items-center gap-2 px-3 md:px-4 py-2.5 md:py-3">
+          <!-- Logo (clickable: goes home) -->
+          <button class="flex items-center gap-2.5 min-w-0 group" @click="goHome" :title="view === 'home' ? '' : 'Inicio'">
+            <div class="w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
+                 style="background: linear-gradient(135deg, #E85D04, #B14302); box-shadow: 0 6px 18px rgba(232,93,4,0.35);">
+              <svg viewBox="0 0 24 24" class="w-5 h-5 md:w-5.5 md:h-5.5 text-white" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+              </svg>
+            </div>
+            <div class="min-w-0 text-left hidden xs:block sm:block">
+              <h1 class="pit-display text-xl md:text-2xl leading-none">
+                Pit<span class="text-pit-accent">Stop</span>
+              </h1>
+              <p class="text-[10px] text-pit-muted tracking-wide hidden md:block">Cotizaciones Profesionales</p>
+            </div>
+          </button>
 
-        <div class="ml-auto flex items-center gap-2">
-          <button
-            v-if="view === 'stepper'"
-            class="pit-btn-ghost !px-3 !py-2 text-sm"
-            @click="goHome"
-            title="Inicio"
-          >
-            <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" />
-            </svg>
-            <span class="hidden sm:inline">Inicio</span>
-          </button>
-          <button class="pit-btn-ghost !px-3 !py-2 text-sm" @click="openHistory" title="Historial cloud">
-            <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 3h18v4H3zM3 11h18v10H3zM7 7v4M17 7v4" />
-            </svg>
-            <span class="hidden sm:inline">Historial</span>
-            <span v-if="auth.isAuthenticated.value" class="w-1.5 h-1.5 rounded-full bg-emerald-400 ml-0.5" title="Autenticado"></span>
-          </button>
-          <button class="pit-btn-ghost !px-3 !py-2 text-sm" @click="pickFile" title="Cargar cotización (.json)">
-            <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
-            </svg>
-            <span class="hidden sm:inline">Cargar</span>
-          </button>
-          <input ref="fileInput" type="file" accept="application/json,.json" class="hidden" @change="onFileSelected" />
+          <div class="ml-auto flex items-center gap-1.5 md:gap-2">
+            <!-- Cotizaciones -->
+            <button
+              class="flex items-center gap-2 px-3 md:px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200"
+              :class="showHistory
+                ? 'bg-pit-accent/15 border border-pit-accent/30 text-pit-accentLight'
+                : 'text-pit-text hover:bg-white/5 border border-transparent'"
+              @click="openHistory"
+            >
+              <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 3h18v4H3zM3 11h18v10H3zM7 7v4M17 7v4" />
+              </svg>
+              <span class="hidden sm:inline">Cotizaciones</span>
+              <span v-if="auth.isAuthenticated.value" class="w-1.5 h-1.5 rounded-full bg-emerald-400" title="Autenticado"></span>
+            </button>
+
+            <!-- Crear -->
+            <button
+              class="flex items-center gap-2 px-3 md:px-4 py-2 rounded-xl text-sm font-semibold text-white bg-pit-accent hover:bg-pit-accentLight transition-all duration-200"
+              style="box-shadow: 0 6px 16px rgba(232,93,4,0.3);"
+              @click="startNewQuote"
+            >
+              <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              <span class="hidden sm:inline">Crear</span>
+            </button>
+          </div>
         </div>
-      </div>
 
-      <!-- Step indicator (only in stepper view) -->
-      <div v-if="view === 'stepper'" class="max-w-5xl mx-auto px-4 md:px-6 pb-4">
-        <StepIndicator :current="q.currentStep.value" @go="goToStep" />
+        <!-- Step indicator (only in stepper view) -->
+        <div v-if="view === 'stepper'" class="px-4 md:px-5 pb-3 pt-1 border-t border-pit-border/50">
+          <StepIndicator :current="q.currentStep.value" @go="goToStep" />
+        </div>
       </div>
     </header>
 
     <!-- Main -->
-    <main class="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-10 pb-32">
+    <main class="max-w-4xl mx-auto px-4 md:px-6 py-6 md:py-10 pb-32">
       <Transition name="modal" mode="out-in">
-        <!-- HOME -->
         <HomeView
           v-if="view === 'home'"
           ref="homeRef"
@@ -207,12 +179,11 @@ onMounted(() => {
           @toast="(m, t) => showToast(m, t)"
         />
 
-        <!-- STEPPER -->
         <div v-else key="stepper" class="stepper-stage">
           <Transition :name="direction === 'forward' ? 'slide' : 'slide'" mode="out-in">
             <ClientForm v-if="stepKey === 1" key="step-1" @next="goToStep(2)" />
             <ItemsTable v-else-if="stepKey === 2" key="step-2" @next="goToStep(3)" @back="goToStep(1)" />
-            <FinalStep v-else key="step-3" @back="goToStep(2)" @reset="onResetFromFinal" @toast="(msg, type) => showToast(msg, type)" />
+            <FinalStep v-else key="step-3" @back="goToStep(2)" @edit-client="goToStep(1)" @reset="onResetFromFinal" @toast="(msg, type) => showToast(msg, type)" />
           </Transition>
         </div>
       </Transition>
@@ -236,7 +207,7 @@ onMounted(() => {
     <!-- Toast -->
     <Transition name="modal">
       <div v-if="toast"
-           class="fixed left-1/2 -translate-x-1/2 top-4 z-50 max-w-[92vw] px-4 py-3 rounded-xl border text-sm shadow-soft"
+           class="fixed left-1/2 -translate-x-1/2 top-20 z-50 max-w-[92vw] px-4 py-3 rounded-xl border text-sm shadow-soft"
            :class="toast.type === 'error'
              ? 'bg-red-950/90 border-red-700/40 text-red-100'
              : toast.type === 'success'

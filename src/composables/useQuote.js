@@ -161,7 +161,7 @@ function loadFromJson(data) {
       total: cantidad * precioUnitario
     }
   })
-  state.currentStep = 1
+  // No reseteamos currentStep — el caller decide a qué paso ir
   persist()
 }
 
@@ -199,156 +199,244 @@ function formatFechaLarga(iso) {
   }
 }
 
+// Helper: section header bar (orange background, white uppercase title)
+function sectionHeader(doc, title, x, y, width) {
+  doc.setFillColor(232, 93, 4)
+  doc.rect(x, y, width, 22, 'F')
+  doc.setTextColor(255, 255, 255)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(10)
+  doc.text(String(title).toUpperCase(), x + 10, y + 14.5)
+  return y + 22
+}
+
 function buildPdf() {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
-  const margin = 36
+  const margin = 40
+  const innerWidth = pageWidth - margin * 2
 
-  // ---------- Header band ----------
-  doc.setFillColor(10, 10, 10)
-  doc.rect(0, 0, pageWidth, 92, 'F')
-
+  // ---------- Top: Logo + COTIZACIÓN title ----------
+  // Logo (orange wrench in rounded square)
+  const logoSize = 44
+  const logoX = margin
+  const logoY = margin
   doc.setFillColor(232, 93, 4)
-  doc.rect(0, 92, pageWidth, 4, 'F')
+  doc.roundedRect(logoX, logoY, logoSize, logoSize, 8, 8, 'F')
+  // Wrench glyph (simple stylized "W" / chevron)
+  doc.setDrawColor(255, 255, 255)
+  doc.setLineWidth(2.4)
+  doc.setLineCap('round')
+  doc.setLineJoin('round')
+  // arrow up icon (similar to the reference)
+  doc.line(logoX + 12, logoY + 28, logoX + 22, logoY + 16)
+  doc.line(logoX + 22, logoY + 16, logoX + 32, logoY + 28)
+  doc.line(logoX + 14, logoY + 34, logoX + 22, logoY + 24)
+  doc.line(logoX + 22, logoY + 24, logoX + 30, logoY + 34)
 
-  doc.setTextColor(245, 245, 245)
+  // PITSTOP wordmark under logo
+  doc.setTextColor(40, 40, 40)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(11)
+  doc.text('PITSTOP', logoX, logoY + logoSize + 14)
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(7.5)
+  doc.setTextColor(150, 150, 150)
+  doc.text('SERVICIOS AUTOMOTRICES', logoX, logoY + logoSize + 24)
+
+  // Right side: COTIZACIÓN big
+  doc.setTextColor(40, 40, 40)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(28)
-  doc.text('PITSTOP', margin, 46)
+  doc.text('COTIZACIÓN', pageWidth - margin, logoY + 22, { align: 'right' })
 
-  doc.setTextColor(232, 93, 4)
-  doc.setFontSize(11)
   doc.setFont('helvetica', 'normal')
-  doc.text('Cotización de Servicios Automotrices', margin, 66)
-
-  doc.setTextColor(245, 245, 245)
   doc.setFontSize(10)
-  doc.setFont('helvetica', 'bold')
-  doc.text(state.quote.id, pageWidth - margin, 40, { align: 'right' })
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(180, 180, 180)
-  doc.text(formatFechaLarga(state.quote.fecha), pageWidth - margin, 56, { align: 'right' })
-  doc.text('Válida por 15 días', pageWidth - margin, 70, { align: 'right' })
+  doc.setTextColor(80, 80, 80)
+  doc.text(`N°: ${state.quote.id}`, pageWidth - margin, logoY + 40, { align: 'right' })
+  doc.text(`FECHA: ${formatFechaCorta(state.quote.fecha)}`, pageWidth - margin, logoY + 54, { align: 'right' })
 
-  // ---------- Client / Vehicle box ----------
-  let y = 124
-  doc.setDrawColor(220, 220, 220)
-  doc.setLineWidth(0.7)
-  doc.roundedRect(margin, y, pageWidth - margin * 2, 110, 6, 6)
+  // ---------- Section: INFORMACIÓN DEL CLIENTE ----------
+  let y = logoY + logoSize + 50
+  y = sectionHeader(doc, 'Información del cliente', margin, y, innerWidth)
 
+  // Content background (very light) under the section
   const c = state.quote.cliente
-  const colWidth = (pageWidth - margin * 2 - 24) / 2
-  const colLeftX = margin + 14
-  const colRightX = margin + 14 + colWidth + 12
-
-  // Left column: client
-  doc.setTextColor(120, 120, 120)
-  doc.setFontSize(8)
-  doc.setFont('helvetica', 'bold')
-  doc.text('CLIENTE', colLeftX, y + 18)
-
-  doc.setTextColor(40, 40, 40)
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(13)
-  const fullName = `${c.nombre || ''} ${c.apellido || ''}`.trim() || '—'
-  doc.text(fullName, colLeftX, y + 36)
-
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(10)
-  doc.setTextColor(80, 80, 80)
-  let yy = y + 54
-  if (c.telefono) { doc.text(`Tel: ${c.telefono}`, colLeftX, yy); yy += 14 }
-  if (c.email) { doc.text(`Email: ${c.email}`, colLeftX, yy); yy += 14 }
-
-  // Right column: vehicle
-  doc.setTextColor(120, 120, 120)
-  doc.setFontSize(8)
-  doc.setFont('helvetica', 'bold')
-  doc.text('VEHÍCULO', colRightX, y + 18)
-
-  doc.setTextColor(40, 40, 40)
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(13)
-  doc.text((c.patente || '—').toUpperCase(), colRightX, y + 36)
-
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(10)
-  doc.setTextColor(80, 80, 80)
+  const clientLines = []
+  const fullName = `${c.nombre || ''} ${c.apellido || ''}`.trim()
+  if (fullName) clientLines.push(['Nombre completo:', fullName])
+  if (c.telefono) clientLines.push(['Teléfono:', c.telefono])
+  if (c.email) clientLines.push(['Correo electrónico:', c.email])
+  const patente = (c.patente || '').toUpperCase()
+  if (patente) clientLines.push(['Patente:', patente])
   const veh = [c.marca, c.modelo, c.anio].filter(Boolean).join(' ')
-  if (veh) doc.text(veh, colRightX, y + 54)
+  if (veh) clientLines.push(['Vehículo:', veh])
+
+  const rowH = 16
+  const blockH = Math.max(rowH * clientLines.length + 20, 50)
+  doc.setFillColor(252, 252, 252)
+  doc.rect(margin, y, innerWidth, blockH, 'F')
+
+  doc.setFontSize(10)
+  let cy = y + 18
+  for (const [label, value] of clientLines) {
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(120, 120, 120)
+    doc.text(label, margin + 12, cy)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(40, 40, 40)
+    doc.text(String(value), margin + 130, cy)
+    cy += rowH
+  }
+  y += blockH + 16
 
   // ---------- Items table ----------
-  const tableStartY = y + 130
-
-  const rows = state.quote.items.map((it, idx) => [
-    String(idx + 1),
+  const rows = state.quote.items.map(it => [
     it.descripcion,
-    String(it.cantidad),
     formatCLP(it.precioUnitario),
+    String(it.cantidad),
     formatCLP((it.cantidad || 0) * (it.precioUnitario || 0))
   ])
 
   autoTable(doc, {
-    startY: tableStartY,
-    head: [['#', 'Descripción', 'Cant.', 'Precio Unit.', 'Total']],
+    startY: y,
+    head: [['DESCRIPCIÓN', 'PRECIO', 'CANTIDAD', 'TOTAL']],
     body: rows,
     margin: { left: margin, right: margin },
+    tableWidth: innerWidth,
     styles: {
       font: 'helvetica',
       fontSize: 10,
-      cellPadding: 8,
-      lineColor: [230, 230, 230],
-      lineWidth: 0.4,
+      cellPadding: { top: 8, right: 10, bottom: 8, left: 10 },
+      lineColor: [255, 255, 255],
+      lineWidth: 0,
       textColor: [40, 40, 40]
     },
     headStyles: {
       fillColor: [232, 93, 4],
       textColor: [255, 255, 255],
       fontStyle: 'bold',
-      halign: 'left'
+      fontSize: 10,
+      halign: 'left',
+      cellPadding: { top: 6, right: 10, bottom: 6, left: 10 }
+    },
+    bodyStyles: {
+      fillColor: [255, 255, 255]
     },
     alternateRowStyles: {
-      fillColor: [249, 249, 249]
+      fillColor: [253, 240, 232] // muy light orange tint (alterna como en la imagen)
     },
     columnStyles: {
-      0: { cellWidth: 32, halign: 'center' },
-      1: { cellWidth: 'auto' },
-      2: { cellWidth: 50, halign: 'center' },
-      3: { cellWidth: 90, halign: 'right' },
-      4: { cellWidth: 90, halign: 'right', fontStyle: 'bold' }
-    },
-    foot: [
-      [
-        { content: 'Subtotal (neto)', colSpan: 4, styles: { halign: 'right', fillColor: [249, 249, 249], textColor: [60, 60, 60], fontStyle: 'normal' } },
-        { content: formatCLP(subtotal.value), styles: { halign: 'right', fillColor: [249, 249, 249], textColor: [60, 60, 60], fontStyle: 'bold' } }
-      ],
-      [
-        { content: 'IVA 19%', colSpan: 4, styles: { halign: 'right', fillColor: [249, 249, 249], textColor: [60, 60, 60], fontStyle: 'normal' } },
-        { content: formatCLP(iva.value), styles: { halign: 'right', fillColor: [249, 249, 249], textColor: [60, 60, 60], fontStyle: 'bold' } }
-      ],
-      [
-        { content: 'TOTAL', colSpan: 4, styles: { halign: 'right', fillColor: [28, 28, 28], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 11 } },
-        { content: formatCLP(total.value), styles: { halign: 'right', fillColor: [28, 28, 28], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 11 } }
-      ]
-    ]
+      0: { cellWidth: 'auto' },
+      1: { cellWidth: 90, halign: 'right' },
+      2: { cellWidth: 70, halign: 'center' },
+      3: { cellWidth: 90, halign: 'right', fontStyle: 'bold' }
+    }
   })
 
-  // ---------- Footer on every page ----------
+  let afterTable = doc.lastAutoTable.finalY
+
+  // ---------- Totals (right-aligned, no fondo) ----------
+  const totalsX = pageWidth - margin - 200
+  const totalsValueX = pageWidth - margin
+  let ty = afterTable + 18
+
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(10)
+  doc.setTextColor(120, 120, 120)
+  doc.text('SUBTOTAL', totalsX, ty)
+  doc.setTextColor(40, 40, 40)
+  doc.text(formatCLP(subtotal.value), totalsValueX, ty, { align: 'right' })
+  ty += 18
+
+  doc.setTextColor(120, 120, 120)
+  doc.text('IVA 19%', totalsX, ty)
+  doc.setTextColor(40, 40, 40)
+  doc.text(formatCLP(iva.value), totalsValueX, ty, { align: 'right' })
+  ty += 14
+
+  // Línea separadora
+  doc.setDrawColor(220, 220, 220)
+  doc.setLineWidth(0.6)
+  doc.line(totalsX, ty, totalsValueX, ty)
+  ty += 18
+
+  // TOTAL final con barra naranja
+  doc.setFillColor(232, 93, 4)
+  doc.rect(totalsX - 8, ty - 14, totalsValueX - totalsX + 16, 26, 'F')
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(12)
+  doc.setTextColor(255, 255, 255)
+  doc.text('TOTAL', totalsX, ty + 4)
+  doc.text(formatCLP(total.value), totalsValueX - 4, ty + 4, { align: 'right' })
+
+  ty += 26
+
+  // ---------- Section: DETALLES DE PAGO ----------
+  let py = ty + 26
+  if (py > pageHeight - 140) {
+    doc.addPage()
+    py = margin
+  }
+  py = sectionHeader(doc, 'Detalles de pago', margin, py, innerWidth)
+
+  doc.setFillColor(252, 252, 252)
+  doc.rect(margin, py, innerWidth, 70, 'F')
+
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(10)
+  doc.setTextColor(120, 120, 120)
+  doc.text('Forma de pago:', margin + 12, py + 18)
+  doc.text('Validez:', margin + 12, py + 36)
+  doc.text('Información adicional:', margin + 12, py + 54)
+
+  doc.setTextColor(40, 40, 40)
+  doc.text('Efectivo, transferencia o débito al momento del servicio.', margin + 130, py + 18)
+  doc.text('15 días corridos desde la fecha de emisión.', margin + 130, py + 36)
+  doc.text('Los precios incluyen el IVA correspondiente.', margin + 130, py + 54)
+
+  py += 70
+
+  // ---------- Section: CONTACTO ----------
+  py += 16
+  if (py > pageHeight - 80) {
+    doc.addPage()
+    py = margin
+  }
+  py = sectionHeader(doc, 'Contacto', margin, py, innerWidth)
+
+  doc.setFillColor(252, 252, 252)
+  doc.rect(margin, py, innerWidth, 32, 'F')
+
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(10)
+  doc.setTextColor(120, 120, 120)
+  doc.text('PitStop · Servicios Automotrices', margin + 12, py + 20)
+  doc.setTextColor(232, 93, 4)
+  doc.text('www.pitstop.cl', pageWidth - margin - 12, py + 20, { align: 'right' })
+
+  // ---------- Footer (page numbers on all pages) ----------
   const pageCount = doc.internal.getNumberOfPages()
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i)
-    doc.setDrawColor(232, 93, 4)
-    doc.setLineWidth(1)
-    doc.line(margin, pageHeight - 36, pageWidth - margin, pageHeight - 36)
     doc.setFont('helvetica', 'normal')
-    doc.setFontSize(9)
-    doc.setTextColor(120, 120, 120)
-    doc.text('Gracias por preferirnos — PitStop', margin, pageHeight - 22)
-    doc.text(`Página ${i} de ${pageCount}`, pageWidth - margin, pageHeight - 22, { align: 'right' })
+    doc.setFontSize(8)
+    doc.setTextColor(160, 160, 160)
+    doc.text(`Página ${i} de ${pageCount}`, pageWidth - margin, pageHeight - 16, { align: 'right' })
+    doc.text('PitStop — Cotización generada digitalmente', margin, pageHeight - 16)
   }
 
   return doc
+}
+
+function formatFechaCorta(iso) {
+  try {
+    const d = new Date(iso + 'T00:00:00')
+    return d.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  } catch (e) {
+    return iso
+  }
 }
 
 function generatePdf() {

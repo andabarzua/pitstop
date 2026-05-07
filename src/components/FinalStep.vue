@@ -5,7 +5,7 @@ import { useAuth } from '../composables/useAuth.js'
 import PdfViewer from './PdfViewer.vue'
 import PasswordGate from './PasswordGate.vue'
 
-const emit = defineEmits(['back', 'reset', 'toast'])
+const emit = defineEmits(['back', 'edit-client', 'reset', 'toast'])
 const q = useQuote()
 const auth = useAuth()
 
@@ -128,8 +128,32 @@ onBeforeUnmount(() => {
 
 <template>
   <section class="animate-fade-in">
-    <h2 class="pit-display text-3xl md:text-4xl mb-1">Finalizar y Exportar</h2>
-    <p class="text-pit-muted text-sm mb-6">La cotización se guarda automáticamente en tu historial.</p>
+    <div class="flex flex-wrap items-end justify-between gap-3 mb-6">
+      <div>
+        <h2 class="pit-display text-3xl md:text-4xl mb-1">Finalizar y Exportar</h2>
+        <p class="text-pit-muted text-sm">La cotización se guarda automáticamente en tu historial.</p>
+      </div>
+      <div class="flex gap-2">
+        <button class="pit-btn-ghost !px-3 !py-2 text-sm" @click="emit('edit-client')" title="Editar datos del cliente">
+          <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+          <span class="hidden sm:inline">Cliente</span>
+        </button>
+        <button
+          class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 border"
+          style="background: rgba(232,93,4,0.12); border-color: rgba(232,93,4,0.4); color: #F48C06;"
+          @click="emit('back')"
+        >
+          <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+          </svg>
+          Editar
+        </button>
+      </div>
+    </div>
 
     <!-- Summary card -->
     <div class="pit-card p-5 md:p-6 mb-6"
@@ -284,15 +308,9 @@ onBeforeUnmount(() => {
       </div>
     </Transition>
 
-    <!-- Footer actions -->
-    <div class="mt-8 flex flex-col sm:flex-row gap-3">
-      <button class="pit-btn-ghost flex-1" @click="emit('back')">
-        <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M19 12H5M12 19l-7-7 7-7" />
-        </svg>
-        Editar Cotización
-      </button>
-      <button class="pit-btn-ghost flex-1" @click="emit('reset')">
+    <!-- Footer: nueva cotización -->
+    <div class="mt-8">
+      <button class="pit-btn-ghost w-full py-3" @click="emit('reset')">
         <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 5v14M5 12h14" />
         </svg>
