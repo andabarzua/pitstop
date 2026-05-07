@@ -20,7 +20,8 @@ const greeting = computed(() => {
   return 'Buenas noches'
 })
 const dateStr = computed(() => {
-  return today.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' })
+  const s = today.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' })
+  return s.charAt(0).toUpperCase() + s.slice(1)
 })
 
 async function loadDashboard() {
@@ -70,7 +71,7 @@ defineExpose({ refresh: loadDashboard })
     <!-- Greeting -->
     <div class="flex flex-wrap items-end justify-between gap-3 mb-6">
       <div>
-        <p class="text-pit-muted text-sm capitalize">{{ dateStr }}</p>
+        <p class="text-pit-muted text-sm">{{ dateStr }}</p>
         <h2 class="pit-display text-3xl md:text-4xl mt-1">
           {{ greeting }}<span class="text-pit-accent">.</span>
         </h2>
@@ -111,7 +112,7 @@ defineExpose({ refresh: loadDashboard })
     </div>
 
     <!-- Stats grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-6">
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4 mb-6">
       <!-- Hoy -->
       <div class="pit-card p-4 md:p-5 relative overflow-hidden">
         <div class="absolute -right-4 -top-4 w-20 h-20 rounded-full"
@@ -155,10 +156,11 @@ defineExpose({ refresh: loadDashboard })
         </div>
       </div>
 
-      <!-- Promedio -->
-      <div class="pit-card p-4 md:p-5 relative overflow-hidden">
-        <div class="absolute -right-4 -top-4 w-20 h-20 rounded-full"
-             style="background: radial-gradient(closest-side, rgba(255,255,255,0.04), transparent 70%);"></div>
+      <!-- Promedio (spans 2 cols on mobile, 1 on desktop) -->
+      <div class="pit-card p-4 md:p-5 relative overflow-hidden col-span-2 sm:col-span-1"
+           style="background: linear-gradient(135deg, rgba(232,93,4,0.10), rgba(20,20,20,1));">
+        <div class="absolute -right-6 -top-6 w-24 h-24 rounded-full"
+             style="background: radial-gradient(closest-side, rgba(232,93,4,0.28), transparent 70%);"></div>
         <div class="relative">
           <div class="flex items-center gap-2 mb-2">
             <svg viewBox="0 0 24 24" class="w-4 h-4 text-pit-accentLight" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -166,12 +168,10 @@ defineExpose({ refresh: loadDashboard })
             </svg>
             <p class="text-[10px] uppercase tracking-widest text-pit-muted font-medium">Promedio</p>
           </div>
-          <p class="pit-display text-2xl md:text-3xl text-pit-text leading-none break-words">
+          <p class="pit-display text-3xl md:text-4xl text-pit-accentLight leading-none break-words">
             {{ auth.isAuthenticated.value && stats.all > 0 ? q.formatCLP(stats.avgTotal) : '—' }}
           </p>
-          <p class="text-xs text-pit-muted mt-2">
-            por cotización
-          </p>
+          <p class="text-xs text-pit-muted mt-2">por cotización</p>
         </div>
       </div>
 
