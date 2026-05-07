@@ -7,8 +7,9 @@ import FinalStep from './components/FinalStep.vue'
 import HomeView from './components/HomeView.vue'
 import HistoryView from './components/HistoryView.vue'
 import ServicesView from './components/ServicesView.vue'
+import PublicQuoteView from './components/PublicQuoteView.vue'
 import PasswordGate from './components/PasswordGate.vue'
-import { useQuote } from './composables/useQuote.js'
+import { useQuote, readHashMode } from './composables/useQuote.js'
 import { useAuth } from './composables/useAuth.js'
 
 const q = useQuote()
@@ -16,7 +17,8 @@ const auth = useAuth()
 const toast = ref(null)
 const direction = ref('forward')
 
-const view = ref('home') // 'home' | 'stepper'
+const view = ref('home') // 'home' | 'stepper' | 'public'
+const publicQuoteId = ref('')
 const homeRef = ref(null)
 const showHistory = ref(false)
 const showServices = ref(false)
@@ -111,16 +113,27 @@ function onResetFromFinal() {
 }
 
 onMounted(async () => {
-  const restoredFromHash = await q.tryLoadFromHash()
-  if (restoredFromHash) {
-    view.value = 'stepper'
-    q.setStep(3)
+  const hashInfo = readHashMode()
+  if (hashInfo.mode === 'view' && hashInfo.id) {
+    publicQuoteId.value = hashInfo.id
+    view.value = 'public'
+    return
+  }
+  if (hashInfo.mode === 'load') {
+    const ok = await q.tryLoadFromHash()
+    if (ok) {
+      view.value = 'stepper'
+      q.setStep(3)
+    }
   }
 })
 </script>
 
 <template>
-  <div class="min-h-screen bg-pit-bg text-pit-text">
+  <!-- Vista pública del cliente (URL #v=...): UI minimal sin navbar/app -->
+  <PublicQuoteView v-if="view === 'public'" :quote-id="publicQuoteId" />
+
+  <div v-else class="min-h-screen bg-pit-bg text-pit-text">
     <!-- Background ambient gradient -->
     <div aria-hidden="true" class="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
       <div class="absolute -top-40 -right-40 w-[480px] h-[480px] rounded-full"

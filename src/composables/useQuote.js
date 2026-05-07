@@ -488,10 +488,23 @@ async function getPdfBlob() {
 }
 
 function buildShareUrl() {
-  // URL corta con solo el ID. El frontend la resuelve contra /api/public/quote/[id].
+  // URL corta para vista pública del cliente (read-only, descargable).
   const url = new URL(window.location.href)
-  url.hash = `q=${encodeURIComponent(state.quote.id)}`
+  url.hash = `v=${encodeURIComponent(state.quote.id)}`
   return url.toString()
+}
+
+export function readHashMode() {
+  // Devuelve { mode: 'view' | 'load' | null, id: string | null }
+  // 'view'  → vista pública del cliente
+  // 'load'  → cargar al estado y abrir en stepper
+  const hash = (typeof window !== 'undefined' ? window.location.hash : '') || ''
+  const v = hash.match(/v=([^&]+)/)
+  if (v) return { mode: 'view', id: decodeURIComponent(v[1]) }
+  const q = hash.match(/q=([^&]+)/)
+  if (q) return { mode: 'load', id: decodeURIComponent(q[1]) }
+  if (hash.includes('cot=')) return { mode: 'load', id: null }
+  return { mode: null, id: null }
 }
 
 async function fetchPublicQuote(id) {
