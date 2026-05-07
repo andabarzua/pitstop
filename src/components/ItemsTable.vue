@@ -41,7 +41,7 @@ const hasItems = computed(() => q.itemCount.value > 0)
         <h2 class="pit-display text-3xl md:text-4xl leading-none">Items de Cotización</h2>
         <p class="text-pit-muted text-sm mt-1">
           <span class="pit-chip">{{ q.itemCount.value }} {{ q.itemCount.value === 1 ? 'item' : 'items' }}</span>
-          <span class="ml-2">Total c/IVA:
+          <span class="ml-2">Total:
             <span class="pit-display text-pit-accentLight text-lg align-middle">{{ q.formatCLP(q.total.value) }}</span>
           </span>
         </p>
