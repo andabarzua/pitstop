@@ -141,8 +141,8 @@ defineExpose({ refresh: loadDashboard })
           <p class="pit-display text-4xl md:text-5xl text-pit-text leading-none">
             {{ auth.isAuthenticated.value ? stats.today : '—' }}
           </p>
-          <p class="text-xs text-pit-muted mt-2">
-            {{ stats.today === 1 ? 'cotización' : 'cotizaciones' }}
+          <p class="text-xs text-pit-muted mt-2 capitalize">
+            {{ stats.today === 1 ? 'Cotización' : 'Cotizaciones' }}
           </p>
         </div>
       </div>
@@ -162,8 +162,8 @@ defineExpose({ refresh: loadDashboard })
           <p class="pit-display text-4xl md:text-5xl text-pit-text leading-none">
             {{ auth.isAuthenticated.value ? stats.month : '—' }}
           </p>
-          <p class="text-xs text-pit-muted mt-2">
-            {{ stats.month === 1 ? 'cotización' : 'cotizaciones' }}
+          <p class="text-xs text-pit-muted mt-2 capitalize">
+            {{ stats.month === 1 ? 'Cotización' : 'Cotizaciones' }}
           </p>
         </div>
       </div>
@@ -183,7 +183,7 @@ defineExpose({ refresh: loadDashboard })
           <p class="pit-display text-3xl md:text-4xl text-pit-accentLight leading-none break-words">
             {{ auth.isAuthenticated.value ? q.formatCLP(stats.monthTotal) : '—' }}
           </p>
-          <p class="text-xs text-pit-muted mt-2">cotizaciones del mes</p>
+          <p class="text-xs text-pit-muted mt-2 capitalize">Cotizaciones del mes</p>
         </div>
       </div>
 
@@ -220,7 +220,7 @@ defineExpose({ refresh: loadDashboard })
     <div v-if="auth.isAuthenticated.value">
       <div class="flex items-baseline justify-between mb-3">
         <h3 class="pit-display text-2xl">Recientes</h3>
-        <span v-if="recent.length" class="text-xs text-pit-muted">Últimas {{ recent.length }}</span>
+        <span v-if="recent.length" class="text-xs text-pit-muted capitalize">Últimas {{ recent.length }}</span>
       </div>
 
       <div v-if="loading && !recent.length" class="text-center text-pit-muted text-sm py-8">
@@ -242,7 +242,7 @@ defineExpose({ refresh: loadDashboard })
                 <span class="pit-display text-pit-accent">{{ item.id }}</span>
               </div>
               <p class="text-sm mt-1 truncate">
-                <span class="font-medium">{{ (item.cliente_nombre || '') + ' ' + (item.cliente_apellido || '') }}</span>
+                <span class="font-medium">{{ q.titleCase((item.cliente_nombre || '') + ' ' + (item.cliente_apellido || '')) }}</span>
                 <span v-if="item.patente" class="text-pit-muted ml-2 pit-display tracking-widest text-xs">{{ item.patente }}</span>
               </p>
               <p class="text-[11px] text-pit-muted mt-1 flex items-center gap-1">
@@ -255,7 +255,7 @@ defineExpose({ refresh: loadDashboard })
             </div>
             <div class="text-right">
               <p class="pit-display text-lg text-pit-accentLight">{{ q.formatCLP(item.total) }}</p>
-              <p class="text-[10px] text-pit-muted mt-0.5">{{ item.item_count }} {{ item.item_count === 1 ? 'item' : 'items' }}</p>
+              <p class="text-[10px] text-pit-muted mt-0.5 capitalize">{{ item.item_count }} {{ item.item_count === 1 ? 'Item' : 'Items' }}</p>
             </div>
           </div>
         </li>

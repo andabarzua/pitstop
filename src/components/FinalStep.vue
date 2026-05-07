@@ -15,10 +15,15 @@ const cloudStatus = ref('idle') // idle | saving | saved | error | needsAuth
 const previewUrl = ref('')
 const showPreview = ref(false)
 
-const fullName = computed(() => `${q.quote.cliente.nombre || ''} ${q.quote.cliente.apellido || ''}`.trim() || '—')
+const fullName = computed(() => {
+  const raw = `${q.quote.cliente.nombre || ''} ${q.quote.cliente.apellido || ''}`.trim()
+  return raw ? q.titleCase(raw) : '—'
+})
 const vehicleStr = computed(() => {
   const c = q.quote.cliente
-  return [c.marca, c.modelo, c.anio].filter(Boolean).join(' ') || '—'
+  const parts = [c.marca, c.modelo].filter(Boolean).map(p => q.titleCase(p))
+  if (c.anio) parts.push(String(c.anio))
+  return parts.join(' ') || '—'
 })
 
 function notify(msg, type = 'info') { emit('toast', msg, type) }

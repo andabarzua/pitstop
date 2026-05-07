@@ -145,11 +145,11 @@ onMounted(() => { refresh() })
                       <span class="text-xs text-pit-muted">{{ fmtDate(item.fecha) }}</span>
                     </div>
                     <p class="text-sm mt-1 truncate">
-                      <span class="font-medium">{{ (item.cliente_nombre || '') + ' ' + (item.cliente_apellido || '') }}</span>
+                      <span class="font-medium">{{ q.titleCase((item.cliente_nombre || '') + ' ' + (item.cliente_apellido || '')) }}</span>
                       <span v-if="item.patente" class="text-pit-muted ml-2 pit-display tracking-widest">{{ item.patente }}</span>
                     </p>
-                    <p class="text-xs text-pit-muted mt-0.5">
-                      {{ item.item_count }} {{ item.item_count === 1 ? 'item' : 'items' }}
+                    <p class="text-xs text-pit-muted mt-0.5 capitalize">
+                      {{ item.item_count }} {{ item.item_count === 1 ? 'Item' : 'Items' }}
                     </p>
                   </div>
                   <div class="text-right">
@@ -185,7 +185,7 @@ onMounted(() => { refresh() })
 
         <!-- Footer -->
         <div class="px-4 md:px-6 py-3 border-t border-pit-border bg-pit-surface/60 flex items-center justify-between text-xs text-pit-muted">
-          <span>{{ q.cloudState.list.length }} {{ q.cloudState.list.length === 1 ? 'cotización' : 'cotizaciones' }}</span>
+          <span class="capitalize">{{ q.cloudState.list.length }} {{ q.cloudState.list.length === 1 ? 'Cotización' : 'Cotizaciones' }}</span>
           <button class="text-pit-muted hover:text-pit-text transition-colors" @click="auth.logout(); emit('close')">
             Cerrar sesión cloud
           </button>

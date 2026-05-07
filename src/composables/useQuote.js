@@ -17,6 +17,23 @@ export function formatCLP(amount) {
   return formatter.format(Math.round(n))
 }
 
+export function titleCase(s) {
+  if (!s) return ''
+  return String(s)
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ')
+}
+
+function capitalizeFirst(s) {
+  if (!s) return ''
+  const str = String(s).trim()
+  if (!str) return ''
+  return str.charAt(0).toUpperCase() + str.slice(1)
+}
+
 function todayISO() {
   const d = new Date()
   const y = d.getFullYear()
@@ -264,13 +281,15 @@ function buildPdf() {
   // Content background (very light) under the section
   const c = state.quote.cliente
   const clientLines = []
-  const fullName = `${c.nombre || ''} ${c.apellido || ''}`.trim()
+  const fullName = titleCase(`${c.nombre || ''} ${c.apellido || ''}`.trim())
   if (fullName) clientLines.push(['Nombre completo:', fullName])
   if (c.telefono) clientLines.push(['Teléfono:', c.telefono])
   if (c.email) clientLines.push(['Correo electrónico:', c.email])
   const patente = (c.patente || '').toUpperCase()
   if (patente) clientLines.push(['Patente:', patente])
-  const veh = [c.marca, c.modelo, c.anio].filter(Boolean).join(' ')
+  const vehParts = [c.marca, c.modelo].filter(Boolean).map(p => titleCase(p))
+  if (c.anio) vehParts.push(String(c.anio))
+  const veh = vehParts.join(' ')
   if (veh) clientLines.push(['Vehículo:', veh])
 
   const rowH = 16
@@ -293,7 +312,7 @@ function buildPdf() {
 
   // ---------- Items table ----------
   const rows = state.quote.items.map(it => [
-    it.descripcion,
+    capitalizeFirst(it.descripcion),
     formatCLP(it.precioUnitario),
     String(it.cantidad),
     formatCLP((it.cantidad || 0) * (it.precioUnitario || 0))
@@ -611,6 +630,7 @@ export function useQuote() {
     tryLoadFromHash,
     tryRestore,
     formatCLP,
+    titleCase,
     formatFechaLarga,
     cloudState,
     cloudSave,
