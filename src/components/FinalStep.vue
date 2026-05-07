@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useQuote } from '../composables/useQuote.js'
 import { useAuth } from '../composables/useAuth.js'
 import PdfViewer from './PdfViewer.vue'
@@ -8,12 +8,12 @@ import PasswordGate from './PasswordGate.vue'
 const emit = defineEmits(['back', 'reset', 'toast'])
 const q = useQuote()
 const auth = useAuth()
+
 const showGate = ref(false)
-const savedToCloud = ref(false)
+const cloudStatus = ref('idle') // idle | saving | saved | error | needsAuth
 
 const previewUrl = ref('')
 const showPreview = ref(false)
-const loadingPreview = ref(false)
 
 const fullName = computed(() => `${q.quote.cliente.nombre || ''} ${q.quote.cliente.apellido || ''}`.trim() || '—')
 const vehicleStr = computed(() => {
@@ -22,6 +22,41 @@ const vehicleStr = computed(() => {
 })
 
 function notify(msg, type = 'info') { emit('toast', msg, type) }
+
+async function autoSave() {
+  if (q.itemCount.value === 0) return
+  if (!auth.isAuthenticated.value) {
+    cloudStatus.value = 'needsAuth'
+    showGate.value = true
+    return
+  }
+  cloudStatus.value = 'saving'
+  try {
+    await q.cloudSave()
+    cloudStatus.value = 'saved'
+  } catch (e) {
+    if (String(e.message).toLowerCase().includes('password')) {
+      auth.logout()
+      cloudStatus.value = 'needsAuth'
+      showGate.value = true
+    } else {
+      cloudStatus.value = 'error'
+      notify(e.message || 'No se pudo guardar en historial', 'error')
+    }
+  }
+}
+
+function onGateSuccess() {
+  showGate.value = false
+  autoSave()
+}
+
+function onGateClose() {
+  showGate.value = false
+  if (cloudStatus.value === 'needsAuth') {
+    cloudStatus.value = 'error'
+  }
+}
 
 function onDownload() {
   try {
@@ -33,16 +68,13 @@ function onDownload() {
 }
 
 function onPreview() {
-  loadingPreview.value = true
   try {
     if (previewUrl.value) {
       try { URL.revokeObjectURL(previewUrl.value) } catch (e) {}
     }
     previewUrl.value = q.getPdfBlobUrl()
     showPreview.value = true
-    setTimeout(() => { loadingPreview.value = false }, 200)
   } catch (e) {
-    loadingPreview.value = false
     notify('No se pudo previsualizar', 'error')
   }
 }
@@ -83,44 +115,9 @@ async function onShare() {
   }
 }
 
-async function doCloudSave() {
-  try {
-    await q.cloudSave()
-    savedToCloud.value = true
-    notify('Guardada en historial cloud', 'success')
-    setTimeout(() => { savedToCloud.value = false }, 2500)
-  } catch (e) {
-    if (String(e.message).toLowerCase().includes('password')) {
-      auth.logout()
-      showGate.value = true
-    } else {
-      notify(e.message || 'No se pudo guardar', 'error')
-    }
-  }
-}
-
-function onCloudSave() {
-  if (q.itemCount.value === 0) return
-  if (!auth.isAuthenticated.value) {
-    showGate.value = true
-    return
-  }
-  doCloudSave()
-}
-
-function onGateSuccess() {
-  showGate.value = false
-  doCloudSave()
-}
-
-function onSaveJson() {
-  try {
-    q.downloadJson()
-    notify('Archivo .json descargado', 'success')
-  } catch (e) {
-    notify('No se pudo guardar el archivo', 'error')
-  }
-}
+onMounted(() => {
+  autoSave()
+})
 
 onBeforeUnmount(() => {
   if (previewUrl.value) {
@@ -132,15 +129,50 @@ onBeforeUnmount(() => {
 <template>
   <section class="animate-fade-in">
     <h2 class="pit-display text-3xl md:text-4xl mb-1">Finalizar y Exportar</h2>
-    <p class="text-pit-muted text-sm mb-6">Revisa el resumen antes de generar el documento.</p>
+    <p class="text-pit-muted text-sm mb-6">La cotización se guarda automáticamente en tu historial.</p>
 
     <!-- Summary card -->
     <div class="pit-card p-5 md:p-6 mb-6"
          style="background: linear-gradient(160deg, #1C1C1C, #141414);">
       <div class="flex flex-wrap items-start gap-4">
         <div class="flex-1 min-w-[180px]">
-          <p class="text-[11px] uppercase tracking-widest text-pit-muted">Cotización</p>
-          <p class="pit-display text-2xl md:text-3xl text-pit-accent">{{ q.quote.id }}</p>
+          <div class="flex items-center gap-2 flex-wrap">
+            <p class="text-[11px] uppercase tracking-widest text-pit-muted">Cotización</p>
+            <!-- Cloud status chip -->
+            <span
+              v-if="cloudStatus === 'saving'"
+              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-medium"
+              style="background: rgba(232,93,4,0.15); color: #F48C06; border: 1px solid rgba(232,93,4,0.3);"
+            >
+              <svg viewBox="0 0 24 24" class="w-3 h-3 animate-spin" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12a9 9 0 1 1-6.2-8.5" />
+              </svg>
+              Guardando
+            </span>
+            <span
+              v-else-if="cloudStatus === 'saved'"
+              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-medium"
+              style="background: rgba(16,185,129,0.15); color: #6EE7B7; border: 1px solid rgba(16,185,129,0.3);"
+            >
+              <svg viewBox="0 0 24 24" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Guardada
+            </span>
+            <button
+              v-else-if="cloudStatus === 'error' || cloudStatus === 'needsAuth'"
+              @click="autoSave"
+              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-medium transition-colors"
+              style="background: rgba(220,38,38,0.15); color: #FCA5A5; border: 1px solid rgba(220,38,38,0.3);"
+              title="Reintentar"
+            >
+              <svg viewBox="0 0 24 24" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12a9 9 0 0 1 15.5-6.3L21 8M21 3v5h-5" />
+              </svg>
+              No guardada · Reintentar
+            </button>
+          </div>
+          <p class="pit-display text-2xl md:text-3xl text-pit-accent mt-1">{{ q.quote.id }}</p>
           <p class="text-pit-muted text-xs mt-1">{{ q.formatFechaLarga(q.quote.fecha) }}</p>
         </div>
         <div class="text-right">
@@ -223,57 +255,11 @@ onBeforeUnmount(() => {
       </button>
     </div>
 
-    <!-- Cloud save -->
-    <div class="mt-4">
-      <button
-        class="w-full py-4 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 border"
-        :class="savedToCloud
-          ? 'bg-emerald-600/20 border-emerald-500/40 text-emerald-200'
-          : 'bg-pit-surface2 border-pit-border text-pit-text hover:border-pit-accent/60 hover:bg-pit-accent/10'"
-        @click="onCloudSave"
-        :disabled="q.itemCount.value === 0 || q.cloudState.saving"
-      >
-        <span v-if="q.cloudState.saving" class="flex items-center gap-2">
-          <svg viewBox="0 0 24 24" class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 12a9 9 0 1 1-6.2-8.5" />
-          </svg>
-          Guardando…
-        </span>
-        <span v-else-if="savedToCloud" class="flex items-center gap-2">
-          <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-          Guardada en historial
-        </span>
-        <span v-else class="flex items-center gap-2">
-          <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="17 8 12 3 7 8" />
-            <path d="M12 3v12" />
-            <path d="M21 9c-1-3-4-5-9-5s-8 2-9 5" />
-          </svg>
-          Guardar en historial cloud
-        </span>
-      </button>
-    </div>
-
-    <!-- Save as editable JSON -->
-    <div class="mt-2">
-      <button class="pit-btn-ghost w-full py-3" @click="onSaveJson" :disabled="q.itemCount.value === 0">
-        <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-          <polyline points="17 21 17 13 7 13 7 21" />
-          <polyline points="7 3 7 8 15 8" />
-        </svg>
-        Guardar como archivo editable (.json)
-      </button>
-    </div>
-
     <PasswordGate
       :open="showGate"
       title="Guardar en historial"
       message="Ingresa la password para guardar esta cotización en el cloud."
-      @close="showGate = false"
+      @close="onGateClose"
       @success="onGateSuccess"
     />
 
