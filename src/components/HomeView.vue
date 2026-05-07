@@ -111,7 +111,7 @@ defineExpose({ refresh: loadDashboard })
     </div>
 
     <!-- Stats grid -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-6">
       <!-- Hoy -->
       <div class="pit-card p-4 md:p-5 relative overflow-hidden">
         <div class="absolute -right-4 -top-4 w-20 h-20 rounded-full"
@@ -130,7 +130,6 @@ defineExpose({ refresh: loadDashboard })
           </p>
           <p class="text-xs text-pit-muted mt-2">
             {{ stats.today === 1 ? 'cotización' : 'cotizaciones' }}
-            <span v-if="auth.isAuthenticated.value && stats.todayTotal > 0" class="ml-1 text-pit-accentLight">· {{ q.formatCLP(stats.todayTotal) }}</span>
           </p>
         </div>
       </div>
@@ -176,26 +175,6 @@ defineExpose({ refresh: loadDashboard })
         </div>
       </div>
 
-      <!-- Total mes -->
-      <div class="pit-card p-4 md:p-5 relative overflow-hidden col-span-2 lg:col-span-1"
-           style="background: linear-gradient(135deg, rgba(232,93,4,0.10), rgba(20,20,20,1));">
-        <div class="absolute -right-6 -top-6 w-24 h-24 rounded-full"
-             style="background: radial-gradient(closest-side, rgba(232,93,4,0.28), transparent 70%);"></div>
-        <div class="relative">
-          <div class="flex items-center gap-2 mb-2">
-            <svg viewBox="0 0 24 24" class="w-4 h-4 text-pit-accentLight" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 17l6-6 4 4 8-8M14 7h7v7" />
-            </svg>
-            <p class="text-[10px] uppercase tracking-widest text-pit-muted font-medium">Facturado mes</p>
-          </div>
-          <p class="pit-display text-2xl md:text-3xl text-pit-accentLight leading-none break-words">
-            {{ auth.isAuthenticated.value ? q.formatCLP(stats.monthTotal) : '—' }}
-          </p>
-          <p class="text-xs text-pit-muted mt-2">
-            con IVA incluido
-          </p>
-        </div>
-      </div>
     </div>
 
     <!-- Error -->

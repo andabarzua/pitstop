@@ -17,11 +17,17 @@ const errors = computed(() => ({
 
 const isValid = computed(() => !errors.value.nombre && !errors.value.apellido && !errors.value.patente)
 
+function formatPatente(raw) {
+  const clean = String(raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6)
+  if (clean.length <= 2) return clean
+  if (clean.length <= 4) return `${clean.slice(0, 2)}-${clean.slice(2)}`
+  return `${clean.slice(0, 2)}-${clean.slice(2, 4)}-${clean.slice(4)}`
+}
+
 watch(() => c.patente, (v) => {
-  if (typeof v === 'string') {
-    const upper = v.toUpperCase()
-    if (upper !== v) c.patente = upper
-  }
+  if (typeof v !== 'string') return
+  const formatted = formatPatente(v)
+  if (formatted !== v) c.patente = formatted
 })
 
 function handleSubmit() {
@@ -99,7 +105,7 @@ async function copyId() {
         <div class="grid md:grid-cols-2 gap-4">
           <div class="md:col-span-2">
             <label class="pit-label">Patente <span class="text-pit-accent">*</span></label>
-            <input v-model="c.patente" type="text" class="pit-input pit-display tracking-widest text-lg" :class="{ invalid: submitted && errors.patente }" placeholder="ABC-123" maxlength="10" />
+            <input v-model="c.patente" type="text" class="pit-input pit-display tracking-widest text-lg" :class="{ invalid: submitted && errors.patente }" placeholder="AB-CD-12 o AB-12-34" maxlength="8" inputmode="text" autocapitalize="characters" />
           </div>
           <div>
             <label class="pit-label">Marca</label>
