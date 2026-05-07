@@ -101,28 +101,6 @@ defineExpose({ refresh: loadDashboard })
       </button>
     </div>
 
-    <!-- Auth callout (when not logged in) -->
-    <div
-      v-if="!auth.isAuthenticated.value"
-      class="pit-card p-5 md:p-6 mb-6 flex flex-wrap items-center gap-4"
-      style="background: linear-gradient(135deg, rgba(232,93,4,0.08), rgba(244,140,6,0.02));"
-    >
-      <div class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-           style="background: rgba(232,93,4,0.15); border: 1px solid rgba(232,93,4,0.3);">
-        <svg viewBox="0 0 24 24" class="w-5 h-5 text-pit-accentLight" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-        </svg>
-      </div>
-      <div class="flex-1 min-w-0">
-        <p class="font-medium text-pit-text">Ingresa para ver tu dashboard</p>
-        <p class="text-pit-muted text-sm mt-0.5">Tus métricas y cotizaciones recientes están en el cloud.</p>
-      </div>
-      <button class="pit-btn-primary !px-4 !py-2 text-sm" @click="emit('request-auth')">
-        Iniciar sesión
-      </button>
-    </div>
-
     <!-- Stats grid -->
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4 mb-6">
       <!-- Hoy -->
@@ -138,9 +116,7 @@ defineExpose({ refresh: loadDashboard })
             </svg>
             <p class="text-[10px] uppercase tracking-widest text-pit-muted font-medium">Hoy</p>
           </div>
-          <p class="pit-display text-4xl md:text-5xl text-pit-text leading-none">
-            {{ auth.isAuthenticated.value ? stats.today : '—' }}
-          </p>
+          <p class="pit-display text-4xl md:text-5xl text-pit-text leading-none">{{ stats.today }}</p>
           <p class="text-xs text-pit-muted mt-2 capitalize">
             {{ stats.today === 1 ? 'Cotización' : 'Cotizaciones' }}
           </p>
@@ -159,9 +135,7 @@ defineExpose({ refresh: loadDashboard })
             </svg>
             <p class="text-[10px] uppercase tracking-widest text-pit-muted font-medium">Este mes</p>
           </div>
-          <p class="pit-display text-4xl md:text-5xl text-pit-text leading-none">
-            {{ auth.isAuthenticated.value ? stats.month : '—' }}
-          </p>
+          <p class="pit-display text-4xl md:text-5xl text-pit-text leading-none">{{ stats.month }}</p>
           <p class="text-xs text-pit-muted mt-2 capitalize">
             {{ stats.month === 1 ? 'Cotización' : 'Cotizaciones' }}
           </p>
@@ -180,9 +154,7 @@ defineExpose({ refresh: loadDashboard })
             </svg>
             <p class="text-[10px] uppercase tracking-widest text-pit-muted font-medium">Total del mes</p>
           </div>
-          <p class="pit-display text-3xl md:text-4xl text-pit-accentLight leading-none break-words">
-            {{ auth.isAuthenticated.value ? q.formatCLP(stats.monthTotal) : '—' }}
-          </p>
+          <p class="pit-display text-3xl md:text-4xl text-pit-accentLight leading-none break-words">{{ q.formatCLP(stats.monthTotal) }}</p>
           <p class="text-xs text-pit-muted mt-2 capitalize">Cotizaciones del mes</p>
         </div>
       </div>
@@ -217,7 +189,7 @@ defineExpose({ refresh: loadDashboard })
     </div>
 
     <!-- Recent -->
-    <div v-if="auth.isAuthenticated.value">
+    <div>
       <div class="flex items-baseline justify-between mb-3">
         <h3 class="pit-display text-2xl">Recientes</h3>
         <span v-if="recent.length" class="text-xs text-pit-muted capitalize">Últimas {{ recent.length }}</span>

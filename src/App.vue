@@ -8,6 +8,7 @@ import HomeView from './components/HomeView.vue'
 import HistoryView from './components/HistoryView.vue'
 import ServicesView from './components/ServicesView.vue'
 import PublicQuoteView from './components/PublicQuoteView.vue'
+import LoginView from './components/LoginView.vue'
 import PasswordGate from './components/PasswordGate.vue'
 import { useQuote, readHashMode } from './composables/useQuote.js'
 import { useAuth } from './composables/useAuth.js'
@@ -94,6 +95,18 @@ function onAuthSuccess() {
   pendingAction.value = null
 }
 
+function onLoginSuccess() {
+  // Después del login, refrescar el dashboard si está visible
+  setTimeout(() => homeRef.value?.refresh?.(), 50)
+}
+
+function onLogout() {
+  if (!confirm('¿Cerrar sesión?')) return
+  auth.logout()
+  view.value = 'home'
+  q.resetQuote()
+}
+
 function onLoadedFromHistory() {
   showHistory.value = false
   view.value = 'stepper'
@@ -132,6 +145,9 @@ onMounted(async () => {
 <template>
   <!-- Vista pública del cliente (URL #v=...): UI minimal sin navbar/app -->
   <PublicQuoteView v-if="view === 'public'" :quote-id="publicQuoteId" />
+
+  <!-- Login obligatorio cuando no autenticado (excepto vista pública) -->
+  <LoginView v-else-if="!auth.isAuthenticated.value" @success="onLoginSuccess" />
 
   <div v-else class="min-h-screen bg-pit-bg text-pit-text">
     <!-- Background ambient gradient -->
@@ -204,6 +220,18 @@ onMounted(async () => {
                 <path d="M12 5v14M5 12h14" />
               </svg>
               <span class="hidden sm:inline">Crear</span>
+            </button>
+
+            <!-- Logout -->
+            <button
+              class="flex items-center justify-center px-2.5 py-2 rounded-xl text-pit-muted hover:text-pit-text hover:bg-white/5 transition-all duration-200"
+              @click="onLogout"
+              title="Cerrar sesión"
+              aria-label="Cerrar sesión"
+            >
+              <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+              </svg>
             </button>
           </div>
         </div>
