@@ -392,7 +392,7 @@ function buildPdf() {
   doc.text('Información adicional:', margin + 12, py + 54)
 
   doc.setTextColor(40, 40, 40)
-  doc.text('Efectivo, transferencia o débito al momento del servicio.', margin + 130, py + 18)
+  doc.text('Transferencia bancaria.', margin + 130, py + 18)
   doc.text('15 días corridos desde la fecha de emisión.', margin + 130, py + 36)
   doc.text('Los precios incluyen el IVA correspondiente.', margin + 130, py + 54)
 
@@ -414,7 +414,9 @@ function buildPdf() {
   doc.setTextColor(120, 120, 120)
   doc.text('PitStop · Servicios Automotrices', margin + 12, py + 20)
   doc.setTextColor(232, 93, 4)
-  doc.text('www.pitstop.cl', pageWidth - margin - 12, py + 20, { align: 'right' })
+  doc.setFont('helvetica', 'bold')
+  doc.text('+56 9 8121 3326', pageWidth - margin - 12, py + 20, { align: 'right' })
+  doc.setFont('helvetica', 'normal')
 
   // ---------- Footer (page numbers on all pages) ----------
   const pageCount = doc.internal.getNumberOfPages()
