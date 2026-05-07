@@ -99,7 +99,7 @@ const waUrl = computed(() => {
     '',
     `Total: ${q.formatCLP(q.total.value)}`,
     '',
-    `Verla y descargar PDF: ${link}`
+    `Con este link puedes verla online y descargarla: ${link}`
   ].join('\n')
   return `https://wa.me/${phone}?text=${encodeURIComponent(lines)}`
 })
