@@ -110,8 +110,8 @@ function onResetFromFinal() {
   goHome()
 }
 
-onMounted(() => {
-  const restoredFromHash = q.tryLoadFromHash()
+onMounted(async () => {
+  const restoredFromHash = await q.tryLoadFromHash()
   if (restoredFromHash) {
     view.value = 'stepper'
     q.setStep(3)

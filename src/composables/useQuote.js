@@ -488,12 +488,19 @@ async function getPdfBlob() {
 }
 
 function buildShareUrl() {
-  const data = exportToJson()
-  const json = JSON.stringify(data)
-  const b64 = btoa(unescape(encodeURIComponent(json)))
+  // URL corta con solo el ID. El frontend la resuelve contra /api/public/quote/[id].
   const url = new URL(window.location.href)
-  url.hash = `cot=${b64}`
+  url.hash = `q=${encodeURIComponent(state.quote.id)}`
   return url.toString()
+}
+
+async function fetchPublicQuote(id) {
+  const res = await fetch(`/api/public/quote/${encodeURIComponent(id)}`)
+  if (!res.ok) {
+    const j = await res.json().catch(() => ({}))
+    throw new Error(j?.error || `HTTP ${res.status}`)
+  }
+  return await res.json()
 }
 
 // ---------- Cloud (Vercel + Neon) ----------
@@ -657,16 +664,28 @@ async function cloudLoad(id) {
   return data
 }
 
-function tryLoadFromHash() {
+async function tryLoadFromHash() {
   try {
     const hash = window.location.hash || ''
-    const m = hash.match(/cot=([^&]+)/)
-    if (!m) return false
-    const json = decodeURIComponent(escape(atob(m[1])))
-    const data = JSON.parse(json)
-    loadFromJson(data)
-    history.replaceState(null, '', window.location.pathname + window.location.search)
-    return true
+    // Formato nuevo: #q=COT-...  → fetch desde endpoint público
+    const idMatch = hash.match(/q=([^&]+)/)
+    if (idMatch) {
+      const id = decodeURIComponent(idMatch[1])
+      const data = await fetchPublicQuote(id)
+      loadFromJson(data)
+      history.replaceState(null, '', window.location.pathname + window.location.search)
+      return true
+    }
+    // Formato legacy: #cot=<base64> (compatibilidad con URLs ya enviadas)
+    const oldMatch = hash.match(/cot=([^&]+)/)
+    if (oldMatch) {
+      const json = decodeURIComponent(escape(atob(oldMatch[1])))
+      const data = JSON.parse(json)
+      loadFromJson(data)
+      history.replaceState(null, '', window.location.pathname + window.location.search)
+      return true
+    }
+    return false
   } catch (e) {
     return false
   }
